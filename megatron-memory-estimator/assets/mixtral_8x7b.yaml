@@ -1,0 +1,43 @@
+# Mixtral 8x7B Configuration
+
+model:
+  num_layers: 32
+  hidden_size: 4096
+  num_attention_heads: 32
+  num_query_groups: 8  # GQA
+  ffn_hidden_size: 14336
+
+  # MoE configuration
+  num_experts: 8
+  moe_router_topk: 2
+  moe_ffn_hidden_size: 14336
+  moe_shared_expert_intermediate_size: null  # No shared experts
+
+  vocab_size: 32000
+  max_position_embeddings: 32768
+
+  normalization: "RMSNorm"
+  layernorm_epsilon: 1.0e-5
+  activation_func: "swiglu"
+  gated_linear_unit: true
+
+parallelism:
+  tensor_model_parallel_size: 4
+  pipeline_model_parallel_size: 2
+  expert_model_parallel_size: 2
+  expert_tensor_parallel_size: 1
+  context_parallel_size: 1
+
+training:
+  micro_batch_size: 1
+  seq_length: 8192
+  use_distributed_optimizer: true
+  recompute_granularity: "full"
+  recompute_method: "uniform"
+  recompute_num_layers: 1
+  sequence_parallel: true
+  world_size: 16
+
+precision:
+  params_dtype: "bf16"
+  fp8: false

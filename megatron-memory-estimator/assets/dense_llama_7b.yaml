@@ -1,0 +1,43 @@
+# Dense LLaMA 7B Configuration (for comparison)
+
+model:
+  num_layers: 32
+  hidden_size: 4096
+  num_attention_heads: 32
+  num_query_groups: 32
+  ffn_hidden_size: 11008
+
+  # No MoE
+  num_experts: null
+  moe_router_topk: null
+  moe_ffn_hidden_size: null
+  moe_shared_expert_intermediate_size: null
+
+  vocab_size: 32000
+  max_position_embeddings: 4096
+
+  normalization: "RMSNorm"
+  layernorm_epsilon: 1.0e-6
+  activation_func: "swiglu"
+  gated_linear_unit: true
+
+parallelism:
+  tensor_model_parallel_size: 2
+  pipeline_model_parallel_size: 1
+  expert_model_parallel_size: 1
+  expert_tensor_parallel_size: 1
+  context_parallel_size: 1
+
+training:
+  micro_batch_size: 2
+  seq_length: 4096
+  use_distributed_optimizer: true
+  recompute_granularity: "full"
+  recompute_method: "uniform"
+  recompute_num_layers: 1
+  sequence_parallel: true
+  world_size: 2
+
+precision:
+  params_dtype: "bf16"
+  fp8: false

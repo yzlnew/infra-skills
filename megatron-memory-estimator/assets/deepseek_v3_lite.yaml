@@ -1,0 +1,44 @@
+# DeepSeek-V3 Lite Configuration (Smaller scale for testing)
+# Approximate 21B total params, 2.4B active params
+
+model:
+  num_layers: 16
+  hidden_size: 2048
+  num_attention_heads: 16
+  num_query_groups: 16
+  ffn_hidden_size: 5632
+
+  # MoE configuration
+  num_experts: 64
+  moe_router_topk: 6
+  moe_ffn_hidden_size: 5632
+  moe_shared_expert_intermediate_size: 5632
+
+  vocab_size: 128256
+  max_position_embeddings: 8192
+
+  normalization: "RMSNorm"
+  layernorm_epsilon: 1.0e-6
+  activation_func: "swiglu"
+  gated_linear_unit: true
+
+parallelism:
+  tensor_model_parallel_size: 2
+  pipeline_model_parallel_size: 2
+  expert_model_parallel_size: 4
+  expert_tensor_parallel_size: 1
+  context_parallel_size: 1
+
+training:
+  micro_batch_size: 1
+  seq_length: 4096
+  use_distributed_optimizer: true
+  recompute_granularity: "full"
+  recompute_method: "block"
+  recompute_num_layers: 0
+  sequence_parallel: true
+  world_size: 16
+
+precision:
+  params_dtype: "bf16"
+  fp8: false

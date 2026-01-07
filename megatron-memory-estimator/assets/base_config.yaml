@@ -1,0 +1,76 @@
+# Base Model Configuration Template
+# This file contains all available configuration options for Megatron MoE models
+
+model:
+  # Model architecture
+  num_layers: 32
+  hidden_size: 4096
+  num_attention_heads: 32
+  num_query_groups: 32  # For GQA, set to < num_attention_heads
+  ffn_hidden_size: 14336
+
+  # MoE specific
+  num_experts: null  # Set to enable MoE (e.g., 8, 16, 64)
+  moe_router_topk: 2  # Number of experts to route each token to
+  moe_ffn_hidden_size: null  # If different from ffn_hidden_size
+  moe_shared_expert_intermediate_size: null  # Enable shared experts if set
+
+  # Vocabulary and sequence
+  vocab_size: 128256
+  max_position_embeddings: 8192
+
+  # Normalization
+  normalization: "RMSNorm"  # or "LayerNorm"
+  layernorm_epsilon: 1.0e-5
+
+  # Activation
+  activation_func: "swiglu"  # or "gelu"
+  gated_linear_unit: true
+
+  # Advanced features
+  qk_layernorm: false
+  multi_latent_attention: false
+  fp16_lm_cross_entropy: false
+
+parallelism:
+  # Tensor parallelism
+  tensor_model_parallel_size: 1
+
+  # Pipeline parallelism
+  pipeline_model_parallel_size: 1
+
+  # Expert parallelism
+  expert_model_parallel_size: 1
+  expert_tensor_parallel_size: 1
+
+  # Context parallelism
+  context_parallel_size: 1
+
+  # Data parallelism (computed automatically)
+  # data_parallel_size = world_size / (tp * pp * ep * etp * cp)
+
+  # Virtual pipeline parallelism (for interleaved schedule)
+  virtual_pipeline_model_parallel_size: null
+
+training:
+  # Batch configuration
+  micro_batch_size: 1
+  seq_length: 8192
+
+  # Optimizer
+  use_distributed_optimizer: true
+
+  # Recompute/Checkpointing
+  recompute_granularity: null  # null, "full", or "selective"
+  recompute_method: null  # "uniform" or "block"
+  recompute_num_layers: null
+
+  # Sequence parallelism
+  sequence_parallel: false
+
+  # Total world size (GPUs)
+  world_size: 8
+
+precision:
+  params_dtype: "bf16"  # bf16 or fp16
+  fp8: false

@@ -30,6 +30,19 @@ Write high-performance GPU kernels using TileLang for NVIDIA, AMD, and Ascend ha
 
 **Status:** ✅ Complete
 
+## In Progress Skills
+
+### Megatron Memory Estimator
+Estimate GPU memory usage for Megatron-based MoE and dense models. Built upon [megatron_memory_estimator](https://huggingface.co/spaces/ISEEKYAN/megatron_memory_estimator).
+
+**Capabilities:**
+- Estimate memory from HuggingFace configs
+- Support for MoE models (DeepSeek-V3, Qwen, etc.)
+- Parallelism strategy comparison (TP/PP/EP/CP)
+- Memory optimization recommendations
+
+**Status:** 🚧 In Progress
+
 ## Planned Skills
 
 ### SGLang Developer
@@ -162,6 +175,9 @@ infra-skills/
 │       ├── API_REFERENCE.md
 │       ├── EXAMPLES.md
 │       └── DEBUGGING.md
+├── megatron-memory-estimator/   # In Progress
+│   ├── SKILL.md
+│   └── references/
 ├── sglang-developer/            # WIP
 └── vllm-developer/              # WIP
 ```
@@ -169,6 +185,7 @@ infra-skills/
 ## Roadmap
 
 - [x] TileLang developer skill
+- [/] Megatron memory estimator skill
 - [ ] SGLang developer skill
 - [ ] vLLM developer skill
 - [ ] Automated testing pipeline
