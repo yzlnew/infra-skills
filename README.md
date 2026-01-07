@@ -62,17 +62,19 @@ Skills are installed by placing the skill directory in Claude's skills path:
 
 **Personal (across all projects):**
 ```bash
-# Clone and symlink to personal skills directory
-git clone https://github.com/your-org/infra-skills.git
-ln -s $(pwd)/infra-skills/tilelang-developer ~/.claude/skills/tilelang-developer
+# Clone and copy to personal skills directory
+git clone https://github.com/yzlnew/infra-skills.git
+mkdir -p ~/.claude/skills
+cp -r infra-skills/tilelang-developer ~/.claude/skills/tilelang-developer
 ```
 
 **Project-level (for repository collaborators):**
 ```bash
-# Clone into project's .claude/skills directory
+# Clone and copy to project's skills directory
 cd your-project
-git clone https://github.com/your-org/infra-skills.git .claude/skills-repo
-ln -s .claude/skills-repo/tilelang-developer .claude/skills/tilelang-developer
+git clone https://github.com/yzlnew/infra-skills.git .claude/skills-repo
+mkdir -p .claude/skills
+cp -r .claude/skills-repo/tilelang-developer .claude/skills/tilelang-developer
 ```
 
 Skills automatically activate when relevant tasks are detected.
