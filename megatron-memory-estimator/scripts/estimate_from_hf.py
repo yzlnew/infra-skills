@@ -32,7 +32,7 @@ except ImportError as e:
     print("  pip install mbridge transformers")
     sys.exit(1)
 
-from megatron_memory_estimator.estimate_013 import estimate_from_config
+from megatron_memory_estimator.estimate_013 import estimate_from_config, patch_parallel_states
 
 
 def load_hf_config(model_path_or_config: str, custom_config: Optional[dict] = None):
@@ -80,6 +80,11 @@ def configure_parallelism(tf_config, args):
 
     if args.vpp:
         tf_config.num_layers_per_virtual_pipeline_stage = args.vpp
+
+    if args.num_layers_in_first_pipeline_stage is not None:
+        tf_config.num_layers_in_first_pipeline_stage = args.num_layers_in_first_pipeline_stage
+    if args.num_layers_in_last_pipeline_stage is not None:
+        tf_config.num_layers_in_last_pipeline_stage = args.num_layers_in_last_pipeline_stage
 
     return tf_config
 
@@ -237,6 +242,10 @@ Examples:
                         help='Expert tensor parallel size')
     parser.add_argument('--vpp', type=int,
                         help='Virtual pipeline parallel size')
+    parser.add_argument('--num-layers-in-first-pipeline-stage', type=int,
+                        help='Number of layers in the first pipeline stage')
+    parser.add_argument('--num-layers-in-last-pipeline-stage', type=int,
+                        help='Number of layers in the last pipeline stage')
 
     # Training
     parser.add_argument('--micro-batch-size', type=int, default=1,
@@ -283,11 +292,16 @@ Examples:
     if args.custom_config:
         custom_config_dict = json.loads(args.custom_config)
 
+    # Patch parallel states before loading config
+    patch_parallel_states()
+
     try:
         bridge, tf_config, hf_config = load_hf_config(
             args.model_path or "", custom_config_dict
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Error loading config: {e}")
         return 1
 

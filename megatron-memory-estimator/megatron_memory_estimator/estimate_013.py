@@ -65,6 +65,7 @@ def estimate_from_config(config, args):
 
     args.moe_grouped_gemm = True
     patch_parallel_states()
+    patch_num_layers_to_build()
     if config is None:
         config = core_transformer_config_from_args(args)
 
@@ -256,6 +257,112 @@ def patch_parallel_states():
     )
     parallel_state.is_inside_encoder = lambda: False
     parallel_state.get_pipeline_model_parallel_decoder_start = lambda: 0
+    parallel_state.get_pipeline_model_parallel_group = lambda: None
+
+    # Initialize a dummy global config for mbridge to work during loading
+    from types import SimpleNamespace
+    dummy_config = SimpleNamespace(
+        tensor_model_parallel_size=1,
+        pipeline_model_parallel_size=1,
+        expert_model_parallel_size=1,
+        expert_tensor_parallel_size=1,
+        virtual_pipeline_model_parallel_size=None,
+    )
+    set_global_config(dummy_config)
+
+    # Mock other parallel states
+
+    # Mock other parallel states
+    parallel_state.get_tensor_model_parallel_group = lambda: None
+    parallel_state.get_tensor_model_parallel_rank = lambda: 0
+    parallel_state.get_tensor_model_parallel_world_size = lambda: 1
+
+    parallel_state.get_data_parallel_group = lambda: None
+    parallel_state.get_data_parallel_rank = lambda: 0
+    parallel_state.get_data_parallel_world_size = lambda: 1
+
+    parallel_state.get_context_parallel_group = lambda: None
+    parallel_state.get_context_parallel_rank = lambda: 0
+    parallel_state.get_context_parallel_world_size = lambda: 1
+
+    parallel_state.get_expert_model_parallel_group = lambda: None
+    parallel_state.get_expert_model_parallel_rank = lambda: 0
+    parallel_state.get_expert_model_parallel_world_size = lambda: 1
+    parallel_state.get_expert_tensor_parallel_group = lambda: None
+    parallel_state.get_expert_tensor_parallel_rank = lambda: 0
+    parallel_state.get_expert_tensor_parallel_world_size = lambda: 1
+
+
+    parallel_state.get_expert_tensor_parallel_rank = lambda: 0
+    parallel_state.get_expert_tensor_parallel_world_size = lambda: 1
+
+
+def patch_num_layers_to_build():
+    """Patch get_num_layers_to_build to support custom first/last stage layers"""
+    from megatron.core.transformer import transformer_block
+
+    original_get_num_layers = transformer_block.get_num_layers_to_build
+
+    def get_num_layers_to_build(config):
+        # Check if we have overrides in config
+        first_stage_layers = getattr(config, 'num_layers_in_first_pipeline_stage', None)
+        last_stage_layers = getattr(config, 'num_layers_in_last_pipeline_stage', None)
+
+        if first_stage_layers is None and last_stage_layers is None:
+            return original_get_num_layers(config)
+        
+        # We have overrides, calculate layers for this rank
+        pp_size = config.pipeline_model_parallel_size
+        
+        if pp_size == 1:
+            return config.num_layers
+
+        # Mock getting rank roughly since we iterate over ranks in estimator
+        # In estimator, we set_pipeline_model_parallel_rank(pp_rank)
+        from megatron.core import parallel_state
+        rank = parallel_state.get_pipeline_model_parallel_rank()
+
+        # Handle first stage
+        if rank == 0:
+            return first_stage_layers if first_stage_layers is not None else (
+                original_get_num_layers(config) # Fallback if only last is set?
+            )
+        
+        # Handle last stage
+        if rank == pp_size - 1:
+            return last_stage_layers if last_stage_layers is not None else (
+               original_get_num_layers(config)
+            )
+
+        # Handle middle stages
+        # Calculate remaining layers
+        total_layers = config.num_layers
+        layers_assigned = 0
+        
+        if first_stage_layers is not None:
+            layers_assigned += first_stage_layers
+        else:
+            layers_assigned += original_get_num_layers(config)
+
+        if last_stage_layers is not None:
+            layers_assigned += last_stage_layers
+        else:
+            layers_assigned += original_get_num_layers(config)
+            
+        remaining_layers = total_layers - layers_assigned
+        remaining_ranks = pp_size - 2
+        
+        if remaining_ranks > 0:
+            if remaining_layers % remaining_ranks != 0:
+                # Fallback to float division? Or assume equal?
+                # Megatron usually enforces strict divisibility.
+                # For estimation, let's just create a balanced split
+                pass
+            return remaining_layers // remaining_ranks
+        else:
+            return 0 # Should not happen if pp_size > 2
+
+    transformer_block.get_num_layers_to_build = get_num_layers_to_build
 
 
 def report_memory_usage(args, config=None):
