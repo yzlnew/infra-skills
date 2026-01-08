@@ -4,7 +4,7 @@ Estimate memory from HuggingFace model configs
 
 Usage:
     # From HuggingFace model path
-    python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 --tp 4 --pp 4 --ep 8
+    python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 --tp 4 --pp 4 --ep 8 --num-layers-in-last-pipeline-stage 16
 
     # From local HF config.json
     python scripts/estimate_from_hf.py /path/to/config.json --tp 2 --pp 2
@@ -207,9 +207,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # DeepSeek-V3
+  # DeepSeek-V3 (61 layers, use --num-layers-in-last-pipeline-stage since 61 % pp != 0)
   python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 \\
-      --tp 4 --pp 4 --ep 8 --num-gpus 128
+      --tp 4 --pp 4 --ep 8 --num-gpus 128 --num-layers-in-last-pipeline-stage 16
 
   # Mixtral 8x7B
   python scripts/estimate_from_hf.py mistralai/Mixtral-8x7B-v0.1 \\
@@ -286,6 +286,9 @@ Examples:
         print(f"Error: num_gpus ({args.num_gpus}) must be divisible by TP*PP*CP ({args.tp * args.pp * args.cp})")
         return 1
 
+    # Pipeline parallelism layer distribution validation will be done after loading config
+    # (needs num_hidden_layers from the model config)
+
     # Load config
     print("Loading model configuration...")
     custom_config_dict = None
@@ -304,6 +307,26 @@ Examples:
         traceback.print_exc()
         print(f"Error loading config: {e}")
         return 1
+
+    # Validate pipeline parallelism layer distribution
+    num_layers = getattr(hf_config, 'num_hidden_layers', 0)
+    if args.pp > 1 and num_layers > 0:
+        first_stage_layers = args.num_layers_in_first_pipeline_stage
+        last_stage_layers = args.num_layers_in_last_pipeline_stage
+        
+        if num_layers % args.pp != 0:
+            if first_stage_layers is None and last_stage_layers is None:
+                base_layers = num_layers // args.pp
+                remainder = num_layers % args.pp
+                suggested_last = base_layers + remainder
+                # Build distribution string: base + base + ... + suggested_last
+                distribution = ' + '.join([str(base_layers)] * (args.pp - 1)) + f' + {suggested_last}'
+                print(f"\nWarning: num_hidden_layers ({num_layers}) is not divisible by pp ({args.pp}).")
+                print(f"Please specify layer distribution using:")
+                print(f"  --num-layers-in-last-pipeline-stage {suggested_last}")
+                print(f"  (This will distribute as: {distribution} = {num_layers})")
+                print(f"\nOr use --num-layers-in-first-pipeline-stage to place extra layers at the beginning.")
+                return 1
 
     # Configure parallelism and training
     tf_config = configure_parallelism(tf_config, args)

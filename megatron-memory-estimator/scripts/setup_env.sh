@@ -25,5 +25,5 @@ echo
 echo "✓ Setup complete!"
 echo
 echo "You can now use the skill with:"
-echo "  python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 --tp 4 --pp 4 --ep 8"
+echo "  python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 --tp 4 --pp 4 --ep 8 --num-layers-in-last-pipeline-stage 16"
 echo

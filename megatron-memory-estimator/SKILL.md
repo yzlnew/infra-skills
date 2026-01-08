@@ -14,9 +14,9 @@ Estimate GPU memory usage for Megatron-based models directly from HuggingFace co
 Estimate directly from HuggingFace model paths:
 
 ```bash
-# DeepSeek-V3
+# DeepSeek-V3 (61 layers, requires layer distribution when pp>1)
 python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 \
-    --tp 4 --pp 4 --ep 8 --num-gpus 128
+    --tp 4 --pp 4 --ep 8 --num-gpus 128 --num-layers-in-last-pipeline-stage 16
 
 
 
@@ -37,14 +37,14 @@ python scripts/estimate_from_hf.py /path/to/config.json \
 ```bash
 # Test different parallelism strategies
 python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 \
-    --tp 8 --pp 2 --ep 16  # Strategy 1
+    --tp 8 --pp 2 --ep 16 --num-layers-in-last-pipeline-stage 31  # Strategy 1 (30+31=61)
 
 python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 \
-    --tp 4 --pp 4 --ep 8   # Strategy 2
+    --tp 4 --pp 4 --ep 8 --num-layers-in-last-pipeline-stage 16   # Strategy 2 (15+15+15+16=61)
 
 # Test different batch sizes
 python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 \
-    --tp 4 --pp 4 --ep 8 --micro-batch-size 2
+    --tp 4 --pp 4 --ep 8 --micro-batch-size 2 --num-layers-in-last-pipeline-stage 16
 ```
 
 ## Available Scripts
@@ -65,6 +65,8 @@ Automatically converts HuggingFace configs to Megatron format and estimates memo
 - `--seq-length N`: Sequence length (default: 4096)
 - `--num-gpus N`: Total GPU count (default: 8)
 - `--recompute-granularity {full,selective}`: Enable activation checkpointing
+- `--num-layers-in-first-pipeline-stage N`: Number of layers in the first pipeline stage (use when model layers cannot be evenly divided by `--pp`)
+- `--num-layers-in-last-pipeline-stage N`: Number of layers in the last pipeline stage (use when model layers cannot be evenly divided by `--pp`)
 - `--verbose`: Show detailed model breakdown
 - `--json`: Output as JSON
 
@@ -83,11 +85,11 @@ python scripts/estimate_from_hf.py Qwen/Qwen3-235B-A22B \
 
 # Verbose output
 python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 \
-    --tp 4 --pp 4 --ep 8 --verbose
+    --tp 4 --pp 4 --ep 8 --verbose --num-layers-in-last-pipeline-stage 16
 
 # JSON output for automation
 python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 \
-    --tp 4 --pp 4 --ep 8 --json > result.json
+    --tp 4 --pp 4 --ep 8 --json --num-layers-in-last-pipeline-stage 16 > result.json
 ```
 
 
@@ -102,9 +104,9 @@ MODEL="deepseek-ai/DeepSeek-V3"
 GPUS=128
 
 # Test different strategies
-python scripts/estimate_from_hf.py $MODEL --tp 4 --pp 4 --ep 8 --num-gpus $GPUS
-python scripts/estimate_from_hf.py $MODEL --tp 8 --pp 2 --ep 8 --num-gpus $GPUS
-python scripts/estimate_from_hf.py $MODEL --tp 4 --pp 8 --ep 4 --num-gpus $GPUS
+python scripts/estimate_from_hf.py $MODEL --tp 4 --pp 4 --ep 8 --num-gpus $GPUS --num-layers-in-last-pipeline-stage 16
+python scripts/estimate_from_hf.py $MODEL --tp 8 --pp 2 --ep 8 --num-gpus $GPUS --num-layers-in-last-pipeline-stage 31
+
 
 # Choose strategy that fits GPU memory with best efficiency
 ```
@@ -139,7 +141,7 @@ python scripts/estimate_from_hf.py $MODEL --tp 4 --pp 4 --ep 4 --num-gpus 16 \
 ```bash
 # Check if DeepSeek-V3 fits in 128x A100 80GB
 python scripts/estimate_from_hf.py deepseek-ai/DeepSeek-V3 \
-    --tp 4 --pp 4 --ep 8 --num-gpus 128
+    --tp 4 --pp 4 --ep 8 --num-gpus 128 --num-layers-in-last-pipeline-stage 16
 
 # Output will show peak memory per GPU
 # If < 80 GB: ✓ Fits
