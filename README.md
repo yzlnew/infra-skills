@@ -9,7 +9,7 @@ A collection of specialized agent skills for AI infrastructure development, enab
 
 This repository provides expert-level skills for AI infrastructure engineering tasks. Each skill packages domain knowledge, code examples, and best practices to transform Claude into a specialized developer for specific frameworks and tools.
 
-### Construction Methodology
+### Construction Methodology (Unless Otherwise Specified)
 
 1. **Knowledge Gathering**: Use Gemini DeepResearch to collect comprehensive, up-to-date information on target frameworks
 2. **Skill Development**: Transform research into structured skills using `skill-creator` in Claude Code
@@ -30,8 +30,6 @@ Write high-performance GPU kernels using TileLang for NVIDIA, AMD, and Ascend ha
 
 **Status:** ✅ Complete
 
-## In Progress Skills
-
 ### Megatron Memory Estimator
 Estimate GPU memory usage for Megatron-based MoE and dense models. Built upon [megatron_memory_estimator](https://huggingface.co/spaces/ISEEKYAN/megatron_memory_estimator).
 
@@ -41,7 +39,7 @@ Estimate GPU memory usage for Megatron-based MoE and dense models. Built upon [m
 - Parallelism strategy comparison (TP/PP/EP/CP)
 - Memory optimization recommendations
 
-**Status:** 🚧 In Progress
+**Status:** ✅ Complete
 
 ## Planned Skills
 
@@ -72,6 +70,9 @@ Skill for vLLM engine development and deployment.
 ### Installing Skills
 
 Skills are installed by placing the skill directory in Claude's skills path:
+
+**Natural Language:**
+Ask Claude Code directly: "Help me install skills from https://github.com/yzlnew/infra-skills"
 
 **Personal (across all projects):**
 ```bash
@@ -156,36 +157,10 @@ Open an issue with:
 3. Run validation tests
 4. Submit PR with changelog
 
-## Directory Structure
-
-```
-infra-skills/
-├── README.md
-├── pytest.ini                   # Pytest configuration
-├── tests/                       # Top-level test directory
-│   ├── conftest.py              # Shared pytest fixtures
-│   ├── README.md                # Test documentation
-│   └── tilelang-developer/      # TileLang tests
-│       ├── test_gemm.py
-│       ├── test_flash_attention.py
-│       └── test_mla_decode.py
-├── tilelang-developer/          # Skill directory
-│   ├── SKILL.md                 # Core workflow and metadata
-│   └── references/              # Detailed documentation
-│       ├── API_REFERENCE.md
-│       ├── EXAMPLES.md
-│       └── DEBUGGING.md
-├── megatron-memory-estimator/   # In Progress
-│   ├── SKILL.md
-│   └── references/
-├── sglang-developer/            # WIP
-└── vllm-developer/              # WIP
-```
-
 ## Roadmap
 
 - [x] TileLang developer skill
-- [/] Megatron memory estimator skill
+- [x] Megatron memory estimator skill
 - [ ] SGLang developer skill
 - [ ] vLLM developer skill
 - [ ] Automated testing pipeline
