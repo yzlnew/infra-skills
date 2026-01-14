@@ -59,17 +59,17 @@ Prompt to create this skill, with Sonnet 4.5:
 
 ```
 Use skill-creator to create a skill called slime-user at this repo. slime is an LLM
-  post-training framework for RL Scaling. Its repo is https://github.com/THUDM/slime.
+post-training framework for RL Scaling. Its repo is https://github.com/THUDM/slime.
 
-  Skill creation procedure:
+Skill creation procedure:
 
-  1. Git clone the latest repo
-  2. Analyze `docs/en`, understand basic structure and write a doc navigation guide for user
-  getting stated or finding docs for advanced usage
-  3. Gather valuable examples from the docs and `examples` dir, write key ideas and script
-  path down for quick reference
-  4. Checkout some important source code, for example `slime/slime/utils/arguments.py` and
-  `slime/rollout/sglang_rollout.py`, provide its path and functions for a quick find.
+1. Git clone the latest repo
+2. Analyze `docs/en`, understand basic structure and write a doc navigation guide for user
+getting stated or finding docs for advanced usage
+3. Gather valuable examples from the docs and `examples` dir, write key ideas and script
+path down for quick reference
+4. Checkout some important source code, for example `slime/slime/utils/arguments.py` and
+`slime/rollout/sglang_rollout.py`, provide its path and functions for a quick find.
 ```
 
 ## Planned Skills
