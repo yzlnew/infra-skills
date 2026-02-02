@@ -82,6 +82,8 @@ Create professional flowcharts and architecture diagrams using LaTeX TikZ with s
 - Grouping and layout best practices
 - Clean orthogonal edges and relative positioning
 
+**Example Output:** [QAT Flowchart](gallery/qat_flowchart.pdf)
+
 **Status:** ✅ Complete
 
 ### Material You Slides
@@ -95,6 +97,8 @@ Create presentation slide decks using Material You (Material Design 3) design la
 - Rounded shapes and generous whitespace
 - Surface hierarchy without drop shadows
 - Structured layouts (columns, tables, lists, tags/chips)
+
+**Example Output:** [SLIME RL Training Slides](gallery/slime_rl_slides.pdf)
 
 **Status:** ✅ Complete
 
