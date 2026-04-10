@@ -102,6 +102,22 @@ Create presentation slide decks using Material You (Material Design 3) design la
 
 **Status:** ✅ Complete
 
+### Anthropic Theme Flowchart
+Create polished standalone HTML/CSS flowcharts with Anthropic-inspired pastel styling, reliable geometry, and deterministic connector routing.
+
+**Capabilities:**
+- TS-first flowchart specs that generate standalone HTML artifacts
+- Deterministic node geometry and anchor-based connector routing
+- Transparent dashed grouping frames and pastel role-based node styling
+- Hollow `>` arrowheads and orthogonal bridge connectors
+- Gallery-ready exports generated from the same geometry source
+
+**Example Output:** [Review Demo PNG](gallery/anthropic_theme_flowchart_review_demo.png)
+
+![Anthropic Theme Flowchart Review Demo](gallery/anthropic_theme_flowchart_review_demo.png)
+
+**Status:** ✅ Complete
+
 ## Planned Skills
 
 ### SGLang Developer
@@ -145,6 +161,7 @@ cp -r infra-skills/megatron-memory-estimator ~/.claude/skills/
 cp -r infra-skills/slime-user ~/.claude/skills/
 cp -r infra-skills/tikz-flowchart ~/.claude/skills/
 cp -r infra-skills/material-you-slides ~/.claude/skills/
+cp -r infra-skills/anthropic-theme-flowchart ~/.claude/skills/
 ```
 
 **Project-level (for repository collaborators):**
@@ -158,6 +175,7 @@ cp -r .claude/skills-repo/megatron-memory-estimator .claude/skills/
 cp -r .claude/skills-repo/slime-user .claude/skills/
 cp -r .claude/skills-repo/tikz-flowchart .claude/skills/
 cp -r .claude/skills-repo/material-you-slides .claude/skills/
+cp -r .claude/skills-repo/anthropic-theme-flowchart .claude/skills/
 ```
 
 Skills automatically activate when relevant tasks are detected.
@@ -283,6 +301,7 @@ Open an issue with:
 - [x] SLIME user skill
 - [x] TikZ flowchart skill
 - [x] Material You slides skill
+- [x] Anthropic theme flowchart skill
 - [ ] SGLang developer skill
 - [ ] vLLM developer skill
 - [ ] Automated testing pipeline

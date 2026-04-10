@@ -1,0 +1,8 @@
+{
+  "name": "anthropic-theme-flowchart",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node src/build.ts"
+  }
+}

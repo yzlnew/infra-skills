@@ -1,0 +1,4 @@
+interface:
+  display_name: "Anthropic Flowcharts"
+  short_description: "Build Anthropic-style HTML/CSS flowcharts"
+  default_prompt: "Use $html-flowchart-anthropic to create an Anthropic-style HTML/CSS flowchart for this process."
