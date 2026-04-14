@@ -43,9 +43,10 @@ Use this template when the user explicitly asks for Anthropic styling:
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc, shapes.geometric}
 
-% Optional for XeLaTeX/LuaLaTeX:
-% \usepackage{fontspec}
-% \setsansfont{SF Pro Text}
+\usepackage{fontspec}
+\setsansfont{SF Pro Text}[
+  BoldFont = SF Pro Text Semibold,
+]
 
 % --- Anthropic Color Definitions ---
 \definecolor{bgWarm}{HTML}{FAF8F3}
@@ -88,10 +89,15 @@ Use this template when the user explicitly asks for Anthropic styling:
 \pagecolor{bgWarm}
 
 \newcommand{\anthropicLabel}[4]{%
-  \begin{tabular}{@{}c@{}}
-    {\sffamily\bfseries\small\textcolor{#1}{#3}}\\[-1pt]
-    {\sffamily\fontsize{8}{9}\selectfont\textcolor{#2}{#4}}
-  \end{tabular}%
+  \def\tmp{#4}%
+  \ifx\tmp\empty
+    {\sffamily\bfseries\small\textcolor{#1}{#3}}%
+  \else
+    \begin{tabular}{@{}c@{}}
+      {\sffamily\bfseries\small\textcolor{#1}{#3}}\\[-1pt]
+      {\sffamily\fontsize{8}{9}\selectfont\textcolor{#2}{#4}}
+    \end{tabular}%
+  \fi
 }
 
 \begin{document}
@@ -100,9 +106,8 @@ Use this template when the user explicitly asks for Anthropic styling:
     x=1cm,
     y=1cm,
     font=\sffamily\footnotesize,
-    >=Stealth,
     anthropicEdge/.style={
-        -{Stealth[length=2.2mm,width=1.5mm]},
+        -{Straight Barb[angle=60:2pt 3]},
         draw=connectorStroke,
         line width=0.85pt
     },
@@ -154,7 +159,7 @@ Use this template when the user explicitly asks for Anthropic styling:
     edgeLabel/.style={
         font=\sffamily\scriptsize,
         text=mutedText,
-        fill=bgWarm,
+        fill=none,
         inner sep=1.5pt,
         align=center
     }
@@ -186,19 +191,20 @@ Use this template when the user explicitly asks for Anthropic styling:
 
     \draw[anthropicEdge] (reads) -- (haiku);
     \draw[anthropicEdge] (haiku) -- (instinct);
-    \draw[anthropicEdge] (instinct.west) -| node[pos=0.34, edgeLabel, above] {high-confidence\\instincts injected} (prompt.east);
+    \draw[anthropicEdge] (instinct.west) -- ++(-1.4,0) |- (prompt.east);
+    \node[edgeLabel, anchor=south] at ($(instinct.west)+(-1.4,0.15)$) {high-confidence\\instincts injected};
 
     % --- Groups ---
     \begin{scope}[on background layer]
         \node[
             anthropicGroup,
             fit=(events) (obs) (prompt) (loop),
-            label={[anthropicGroupTitle]north west:{Pi session}}
+            label={[anthropicGroupTitle, anchor=south west]north west:{Pi session}}
         ] {};
         \node[
             anthropicGroup,
             fit=(reads) (haiku) (instinct),
-            label={[anthropicGroupTitle]north west:{Background analyzer (cron / launchd)}}
+            label={[anthropicGroupTitle, anchor=south west]north west:{Background analyzer (cron / launchd)}}
         ] {};
     \end{scope}
 
