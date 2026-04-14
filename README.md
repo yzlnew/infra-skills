@@ -82,7 +82,9 @@ Create professional flowcharts and architecture diagrams using LaTeX TikZ with s
 - Grouping and layout best practices
 - Clean orthogonal edges and relative positioning
 
-**Example Output:** [QAT Flowchart](gallery/qat_flowchart.pdf)
+**Example Output:** [QAT Flowchart](gallery/qat_flowchart.pdf) | [Anthropic Theme](gallery/tikz_flowchart_anthropic_theme.png)
+
+![TikZ Flowchart Anthropic Theme](gallery/tikz_flowchart_anthropic_theme.png)
 
 **Status:** ✅ Complete
 
