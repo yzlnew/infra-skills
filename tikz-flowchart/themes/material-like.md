@@ -17,6 +17,13 @@ The default template uses a Google Material-like palette:
 -   `kernelBox`: Dashed containers for grouping internal kernel logic.
 -   `group`: Dashed background containers for logical grouping of phases/stages.
 
+### Layout and Routing Rules
+
+-   Plan the node layout before drawing connectors. Decide the main flow direction first, then place nodes into aligned rows/columns so the routing stays simple.
+-   Prefer relative positioning for stable alignment, but adjust spacing early if labels or return paths need more room.
+-   Connect with explicit anchors such as `.east`, `.west`, `.north`, and `.south` so the edge meets the node border perpendicularly.
+-   Use straight `--` edges when nodes are aligned; use `-|` or `|-` only for deliberate orthogonal bends.
+
 ### Template
 
 Use this template as your base for the default theme:
@@ -90,7 +97,7 @@ Use this template as your base for the default theme:
 ]
 
     % --- Nodes ---
-    % Example:
+    % Plan the layout first, then place aligned nodes:
     % \node[dataNode] (Input) {Input Data};
     % \node[opNode, right=of Input] (Process) {Process};
 
@@ -100,7 +107,9 @@ Use this template as your base for the default theme:
     % \end{scope}
 
     % --- Connections ---
-    % \draw[->, thick, color=gray!80] (Input) -- (Process);
+    % Use anchors so edges hit node borders perpendicularly:
+    % \draw[->, thick, color=gray!80] (Input.east) -- (Process.west);
+    % \draw[->, thick, color=gray!80] (Process.south) |- (Input.east);
 
 \end{tikzpicture}
 \end{document}

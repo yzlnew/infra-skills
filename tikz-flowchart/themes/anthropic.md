@@ -9,7 +9,7 @@ This theme should follow the color and typography direction from `anthropic-them
 - **Nodes**: mostly rounded rectangles with smaller radii, thin low-contrast borders, and no drop shadow.
 - **Typography**: use sans-serif throughout; prefer an SF Pro-like stack when compiling with XeLaTeX/LuaLaTeX, otherwise use LaTeX `\sffamily`.
 - **Text hierarchy**: primary line uses a near-black tint of the node hue; secondary line uses a darker hue-tinted accent.
-- **Connectors**: thin, quiet strokes with small arrowheads and mostly orthogonal routing.
+- **Connectors**: thin, quiet strokes with small arrowheads and mostly orthogonal routing. Plan the node layout first, then route edges so the segment touching a node is perpendicular to that node edge.
 
 ### Anthropic Color Tokens
 
@@ -32,6 +32,13 @@ This theme should follow the color and typography direction from `anthropic-them
 - `anthropicCardNode`: the default rounded card used for most actions, prompts, feedback, and outputs.
 - `anthropicDecisionNode`: a soft diamond for explicit branching or review gates when the flow really requires a decision shape.
 - `anthropicGroup`: transparent dashed container for lanes, ownership scopes, or background systems.
+
+### Layout and Routing Rules
+
+- Plan the lane structure and node grid before adding connectors. The Anthropic theme looks best when rows and columns are visibly intentional.
+- Align related cards so most connectors can use straight horizontal or vertical segments.
+- Connect through explicit anchors such as `.east`, `.west`, `.north`, and `.south` so the edge meets the card border at a right angle.
+- If a connector needs multiple bends to avoid collisions, reconsider the layout before adding more routing complexity.
 
 ### Anthropic Template
 
@@ -166,6 +173,7 @@ Use this template when the user explicitly asks for Anthropic styling:
 ]
 
     % --- Main lane ---
+    % Place nodes first so the connector geometry stays orthogonal.
     \node[anthropicEventNode, draw=lavStroke, fill=lavFill] (events) at (0,0)
         {\anthropicLabel{lavText}{lavSubtext}{Session events}{}};
     \node[anthropicCardNode, draw=mintStroke, fill=mintFill] (obs) at (0,-2.2)
@@ -184,13 +192,13 @@ Use this template when the user explicitly asks for Anthropic styling:
         {\anthropicLabel{peachText}{peachSubtext}{Instinct files}{.md + YAML frontmatter}};
 
     % --- Connectors ---
-    \draw[anthropicEdge] (events) -- (obs);
-    \draw[anthropicEdge] (obs) -- (prompt);
-    \draw[anthropicEdge] (prompt) -- (loop);
+    \draw[anthropicEdge] (events.south) -- (obs.north);
+    \draw[anthropicEdge] (obs.east) -- (prompt.west);
+    \draw[anthropicEdge] (prompt.south) -- (loop.north);
     \draw[anthropicDashedEdge] (loop.west) -| node[pos=0.35, edgeLabel, below] {records outcomes} (obs.south);
 
-    \draw[anthropicEdge] (reads) -- (haiku);
-    \draw[anthropicEdge] (haiku) -- (instinct);
+    \draw[anthropicEdge] (reads.south) -- (haiku.north);
+    \draw[anthropicEdge] (haiku.south) -- (instinct.north);
     \draw[anthropicEdge] (instinct.west) -- ++(-1.4,0) |- (prompt.east);
     \node[edgeLabel, anchor=south] at ($(instinct.west)+(-1.4,0.15)$) {high-confidence\\instincts injected};
 
