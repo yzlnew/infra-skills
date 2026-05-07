@@ -1,0 +1,442 @@
+{
+  "model": {
+    "id": "deepseek-ai/DeepSeek-V4-Flash",
+    "model_type": "deepseek_v4",
+    "family": "dsv4",
+    "flags": [
+      "hash_routing",
+      "moe",
+      "mtp",
+      "shared_experts",
+      "sliding_window",
+      "swiglu_clip"
+    ],
+    "dims": {
+      "d": 4096,
+      "v": 129280,
+      "L": 43,
+      "H": 64,
+      "Hkv": 1,
+      "dh": 512,
+      "qr": 1024,
+      "or": 1024,
+      "og": 8,
+      "dr": 64,
+      "hm": 4,
+      "Ih": 64,
+      "Id": 128,
+      "index_topk": 512,
+      "f_moe": 2048,
+      "E": 256,
+      "K": 6,
+      "Es": 1,
+      "nh": 3,
+      "nm": 1,
+      "sliding_window": 128,
+      "swiglu_limit": 10.0
+    },
+    "compress_ratios": [
+      0,
+      0,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4,
+      128,
+      4
+    ],
+    "compress_ratio_bins": {
+      "0": 2,
+      "4": 21,
+      "128": 20
+    },
+    "summary": {
+      "total_params": 284438447058,
+      "total_label": "284.44B",
+      "total_with_mtp_params": 291047836232,
+      "total_with_mtp_label": "291.05B",
+      "active_params": 13903512018,
+      "active_label": "13.90B",
+      "mtp_params": 6609389174,
+      "mtp_label": "6.61B",
+      "quantization": "FP8, e4m3, experts=fp4"
+    }
+  },
+  "blocks": [
+    {
+      "name": "token_embed",
+      "kind": "embedding",
+      "shape_in": "[B, T]",
+      "shape_out": "[B, T, 4096]",
+      "formula_symbolic": "v · d",
+      "formula_concrete": "129280 · 4096 = 529.53M",
+      "param_count": 529530880
+    },
+    {
+      "name": "hc_expand",
+      "kind": "hc_expand",
+      "shape_in": "[B, T, 4096]",
+      "shape_out": "[B, T, 4, 4096]",
+      "formula_symbolic": "0  (reshape only)",
+      "formula_concrete": "0",
+      "param_count": 0,
+      "hc_mult": 4
+    },
+    {
+      "name": "transformer_block",
+      "kind": "transformer_block",
+      "shape_in": "[B, T, 4, 4096]",
+      "shape_out": "[B, T, 4, 4096]",
+      "formula_symbolic": "Σ sub-blocks",
+      "formula_concrete": "avg per layer ≈ 6.59B",
+      "param_count": 6590215881,
+      "repeat": 43,
+      "subblocks": [
+        {
+          "name": "hc_pre_attn",
+          "kind": "hc_pre",
+          "shape_in": "[B, T, 4, 4096]",
+          "shape_out": "[B, T, 4096]",
+          "formula_symbolic": "(2+hm)·hm·d",
+          "formula_concrete": "24 · 4096 = 98.33K",
+          "param_count": 98331,
+          "sinkhorn_iters": 20
+        },
+        {
+          "name": "rmsnorm_pre_attn",
+          "kind": "rmsnorm",
+          "shape_in": "[B, T, 4096]",
+          "shape_out": "[B, T, 4096]",
+          "formula_symbolic": "d",
+          "formula_concrete": "4096 = 4.10K",
+          "param_count": 4096
+        },
+        {
+          "name": "dsv4_attention",
+          "kind": "dsv4_attention",
+          "shape_in": "[B, T, 4096]",
+          "shape_out": "[B, T, 4096]",
+          "formula_symbolic": "Σ sub-blocks",
+          "formula_concrete": "= 106.96M (+ Compressor/Indexer per layer)",
+          "param_count": 106956352,
+          "subblocks": [
+            {
+              "name": "wq_a",
+              "kind": "linear",
+              "shape_in": "[B, T, 4096]",
+              "shape_out": "[B, T, 1024]",
+              "formula_symbolic": "d · qr",
+              "formula_concrete": "4096 · 1024 = 4.19M",
+              "param_count": 4194304
+            },
+            {
+              "name": "q_norm",
+              "kind": "rmsnorm",
+              "shape_in": "[B, T, 1024]",
+              "shape_out": "[B, T, 1024]",
+              "formula_symbolic": "d",
+              "formula_concrete": "1024 = 1.02K",
+              "param_count": 1024
+            },
+            {
+              "name": "wq_b",
+              "kind": "linear",
+              "shape_in": "[B, T, 1024]",
+              "shape_out": "[B, T, 64, 512]",
+              "formula_symbolic": "qr · H · dh",
+              "formula_concrete": "1024 · 64 · 512 = 33.55M",
+              "param_count": 33554432
+            },
+            {
+              "name": "wkv",
+              "kind": "linear",
+              "shape_in": "[B, T, 4096]",
+              "shape_out": "[B, T, 512]",
+              "formula_symbolic": "d · dh",
+              "formula_concrete": "4096 · 512 = 2.10M",
+              "param_count": 2097152
+            },
+            {
+              "name": "kv_norm",
+              "kind": "rmsnorm",
+              "shape_in": "[B, T, 512]",
+              "shape_out": "[B, T, 512]",
+              "formula_symbolic": "d",
+              "formula_concrete": "512 = 512",
+              "param_count": 512
+            },
+            {
+              "name": "wo_a",
+              "kind": "grouped_linear",
+              "shape_in": "[B, T, 8, 4096]",
+              "shape_out": "[B, T, 8, 1024]",
+              "formula_symbolic": "(H·dh/og) · (og·or)",
+              "formula_concrete": "4096 · 8192 · 8 = 33.55M",
+              "param_count": 33554432,
+              "o_groups": 8
+            },
+            {
+              "name": "wo_b",
+              "kind": "linear",
+              "shape_in": "[B, T, 8192]",
+              "shape_out": "[B, T, 4096]",
+              "formula_symbolic": "(og·or) · d",
+              "formula_concrete": "8192 · 4096 = 33.55M",
+              "param_count": 33554432
+            },
+            {
+              "name": "attn_sink",
+              "kind": "param",
+              "shape_in": "—",
+              "shape_out": "—",
+              "formula_symbolic": "H",
+              "formula_concrete": "64 = 64",
+              "param_count": 64
+            }
+          ],
+          "compressor_indexer_bins": {
+            "0": {
+              "layers": 2,
+              "compressor": {
+                "present": false,
+                "ratio": 0
+              },
+              "indexer": {
+                "present": false
+              },
+              "extra_params": 0
+            },
+            "4": {
+              "layers": 21,
+              "compressor": {
+                "present": true,
+                "ratio": 4,
+                "overlap": true,
+                "param_count": 8397312,
+                "formula_symbolic": "2·d·2·dh + 2·cr·2·dh + dh",
+                "formula_concrete": "cr=4: 8.40M"
+              },
+              "indexer": {
+                "present": true,
+                "param_count": 17048064,
+                "formula_symbolic": "qr·Ih·Id + d·Ih + Compressor(cr=4)",
+                "formula_concrete": "1024·64·128 + 4096·64 + Compressor(4)=8.40M = 17.05M"
+              },
+              "extra_params": 25445376
+            },
+            "128": {
+              "layers": 20,
+              "compressor": {
+                "present": true,
+                "ratio": 128,
+                "overlap": false,
+                "param_count": 4260352,
+                "formula_symbolic": "2·d·dh + cr·dh + dh",
+                "formula_concrete": "cr=128: 4.26M"
+              },
+              "indexer": {
+                "present": false
+              },
+              "extra_params": 4260352
+            }
+          },
+          "index_topk": 512,
+          "sliding_window": 128
+        },
+        {
+          "name": "hc_post_attn",
+          "kind": "hc_post",
+          "shape_in": "[B, T, 4096]",
+          "shape_out": "[B, T, 4, 4096]",
+          "formula_symbolic": "(2+hm)·hm·d",
+          "formula_concrete": "24 · 4096 = 98.33K",
+          "param_count": 98331
+        },
+        {
+          "name": "hc_pre_ffn",
+          "kind": "hc_pre",
+          "shape_in": "[B, T, 4, 4096]",
+          "shape_out": "[B, T, 4096]",
+          "formula_symbolic": "(2+hm)·hm·d",
+          "formula_concrete": "24 · 4096 = 98.33K",
+          "param_count": 98331
+        },
+        {
+          "name": "rmsnorm_pre_ffn",
+          "kind": "rmsnorm",
+          "shape_in": "[B, T, 4096]",
+          "shape_out": "[B, T, 4096]",
+          "formula_symbolic": "d",
+          "formula_concrete": "4096 = 4.10K",
+          "param_count": 4096
+        },
+        {
+          "name": "moe",
+          "kind": "moe_dsv4",
+          "shape_in": "[B, T, 4096]",
+          "shape_out": "[B, T, 4096]",
+          "formula_symbolic": "d·E + E·3·d·f + Es·3·d·f",
+          "formula_concrete": "router 1.05M + 256·25.17M routed + 1·25.17M shared = 6.47B",
+          "param_count": 6468665344,
+          "score_routed": {
+            "router": 1048576,
+            "routed_total": 6442450944,
+            "shared_total": 25165824,
+            "active_per_token": 177209344,
+            "symbolic": "d·E + E·3·d·f + Es·3·d·f",
+            "concrete": "router 1.05M + 256·25.17M routed + 1·25.17M shared = 6.47B",
+            "active_label": "7·25.17M + router = 177.21M"
+          },
+          "hash_routed": {
+            "tid2eid_table": 775680,
+            "routed_total": 6442450944,
+            "shared_total": 25165824,
+            "active_per_token": 176160768,
+            "symbolic": "v·K + E·3·d·f + Es·3·d·f",
+            "concrete": "tid2eid 775.68K + 256·25.17M routed + 1·25.17M shared = 6.47B",
+            "active_label": "7·25.17M = 176.16M"
+          },
+          "n_hash_layers": 3,
+          "n_score_layers": 40,
+          "n_routed_experts": 256,
+          "topk": 6,
+          "n_shared_experts": 1,
+          "moe_intermediate_size": 2048,
+          "swiglu_limit": 10.0
+        },
+        {
+          "name": "hc_post_ffn",
+          "kind": "hc_post",
+          "shape_in": "[B, T, 4096]",
+          "shape_out": "[B, T, 4, 4096]",
+          "formula_symbolic": "(2+hm)·hm·d",
+          "formula_concrete": "24 · 4096 = 98.33K",
+          "param_count": 98331
+        }
+      ],
+      "compress_ratios": [
+        0,
+        0,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4,
+        128,
+        4
+      ],
+      "compress_ratio_bins": {
+        "0": 2,
+        "4": 21,
+        "128": 20
+      },
+      "n_hash_layers": 3
+    },
+    {
+      "name": "final_norm",
+      "kind": "rmsnorm",
+      "shape_in": "[B, T, 4, 4096]",
+      "shape_out": "[B, T, 4, 4096]",
+      "formula_symbolic": "d",
+      "formula_concrete": "4096 = 4.10K",
+      "param_count": 4096
+    },
+    {
+      "name": "lm_head",
+      "kind": "hc_lm_head",
+      "shape_in": "[B, T, 4, 4096]",
+      "shape_out": "[B, T, 129280]",
+      "formula_symbolic": "v · d  +  (2+4)·4·d",
+      "formula_concrete": "129280·4096 + 24·4096 = 529.63M",
+      "param_count": 529629184
+    },
+    {
+      "name": "mtp_head",
+      "kind": "mtp_head",
+      "shape_in": "[B, T, 4, 4096]",
+      "shape_out": "[B, T, 129280]",
+      "formula_symbolic": "nm·(2·d² + 2·d) + nm·Block",
+      "formula_concrete": "1·(2·4096² + 2·4096) + 1·Block ≈ 6.61B",
+      "param_count": 6609389174,
+      "repeat": 1,
+      "compress_ratios": [
+        0
+      ],
+      "fusion": {
+        "e_proj": 16777216,
+        "h_proj": 16777216,
+        "e_norm": 4096,
+        "h_norm": 4096
+      }
+    }
+  ]
+}

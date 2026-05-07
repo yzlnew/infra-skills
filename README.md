@@ -120,6 +120,23 @@ Create polished standalone HTML/CSS flowcharts with Anthropic-inspired pastel st
 
 **Status:** ✅ Complete
 
+### HF Architecture TikZ
+Generate Sebastian-Raschka-gallery-style TikZ architecture diagrams for any HuggingFace decoder-only LLM, with per-block parameter formulas and concrete numbers.
+
+**Capabilities:**
+- Extract architecture from HuggingFace configs into a structured spec
+- Render publication-quality vertical TikZ diagrams via Jinja templates
+- Annotate every sub-block with parameter formulas and concrete numbers
+- Support MHA, GQA, MLA, Hyper-Connections, sparse attention with learned indexer
+- Cover dense and MoE FFNs (incl. hash routing) and MTP heads
+- Models: DeepSeek-V4-Flash, Qwen, Llama, Mistral, gpt-oss, etc.
+
+**Example Output:** [DeepSeek-V4-Flash PNG](hf-architecture-tikz/examples/deepseek-v4-flash/deepseek-v4-flash.png) | [PDF](hf-architecture-tikz/examples/deepseek-v4-flash/deepseek-v4-flash.pdf)
+
+![DeepSeek-V4-Flash Architecture](hf-architecture-tikz/examples/deepseek-v4-flash/deepseek-v4-flash.png)
+
+**Status:** ✅ Complete
+
 ## Planned Skills
 
 ### SGLang Developer
@@ -164,6 +181,7 @@ cp -r infra-skills/slime-user ~/.claude/skills/
 cp -r infra-skills/tikz-flowchart ~/.claude/skills/
 cp -r infra-skills/material-you-slides ~/.claude/skills/
 cp -r infra-skills/anthropic-theme-flowchart ~/.claude/skills/
+cp -r infra-skills/hf-architecture-tikz ~/.claude/skills/
 ```
 
 **Project-level (for repository collaborators):**
@@ -178,6 +196,7 @@ cp -r .claude/skills-repo/slime-user .claude/skills/
 cp -r .claude/skills-repo/tikz-flowchart .claude/skills/
 cp -r .claude/skills-repo/material-you-slides .claude/skills/
 cp -r .claude/skills-repo/anthropic-theme-flowchart .claude/skills/
+cp -r .claude/skills-repo/hf-architecture-tikz .claude/skills/
 ```
 
 Skills automatically activate when relevant tasks are detected.
@@ -304,6 +323,7 @@ Open an issue with:
 - [x] TikZ flowchart skill
 - [x] Material You slides skill
 - [x] Anthropic theme flowchart skill
+- [x] HF architecture TikZ skill
 - [ ] SGLang developer skill
 - [ ] vLLM developer skill
 - [ ] Automated testing pipeline

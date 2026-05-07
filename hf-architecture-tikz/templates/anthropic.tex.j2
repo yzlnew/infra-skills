@@ -1,0 +1,540 @@
+{# Master TikZ template for HF architecture diagrams in Anthropic warm-pastel palette.
+   Consumed by render_tikz.py with a `spec` dict from extract_arch.py.
+
+   Variables:
+     spec.model: dims/flags/family/summary/compress_ratios
+     spec.blocks: top-level block list
+     opts.show_mtp: bool — include MTP branch if model has it
+     opts.theme: 'anthropic' (only theme implemented for now)
+#}
+{% raw %}\documentclass[tikz,border=12pt]{standalone}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage[mathrm=sym]{unicode-math}
+\setmathfont{FiraMath-Regular.otf}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc, shapes.geometric, shapes.misc, decorations.pathreplacing}
+
+\IfFileExists{fontspec.sty}{%
+  \usepackage{fontspec}
+  \IfFontExistsTF{SF Pro Text}{%
+    \setsansfont{SF Pro Text}[BoldFont=SF Pro Text Semibold]
+  }{}%
+  \IfFontExistsTF{SF Mono}{%
+    \setmonofont{SF Mono}
+  }{}%
+}{}
+
+% --- Anthropic Palette ---
+\definecolor{bgWarm}{HTML}{FAF8F3}
+\definecolor{bgPanel}{HTML}{FFFDFC}
+\definecolor{laneStroke}{HTML}{D7D0C5}
+\definecolor{connectorStroke}{HTML}{9EA9B1}
+\definecolor{inkText}{HTML}{31424B}
+\definecolor{mutedText}{HTML}{66757E}
+
+\definecolor{lavFill}{HTML}{E7E3FF}
+\definecolor{lavStroke}{HTML}{8D86D8}
+\definecolor{lavText}{HTML}{373457}
+\definecolor{lavSubtext}{HTML}{5852A7}
+
+\definecolor{mintFill}{HTML}{DDF4EC}
+\definecolor{mintStroke}{HTML}{78B5A7}
+\definecolor{mintText}{HTML}{294B45}
+\definecolor{mintSubtext}{HTML}{3F8F7F}
+
+\definecolor{tealFill}{HTML}{D9F0F2}
+\definecolor{tealStroke}{HTML}{6CA9B0}
+\definecolor{tealText}{HTML}{29464A}
+\definecolor{tealSubtext}{HTML}{457E85}
+
+\definecolor{creamFill}{HTML}{F4EEE3}
+\definecolor{creamStroke}{HTML}{C1B39E}
+\definecolor{creamText}{HTML}{4E4437}
+\definecolor{creamSubtext}{HTML}{8E7A61}
+
+\definecolor{amberFill}{HTML}{F8E7C9}
+\definecolor{amberStroke}{HTML}{D6A86B}
+\definecolor{amberText}{HTML}{57401C}
+\definecolor{amberSubtext}{HTML}{A27431}
+
+\definecolor{peachFill}{HTML}{F8E0D9}
+\definecolor{peachStroke}{HTML}{CF8E81}
+\definecolor{peachText}{HTML}{55342E}
+\definecolor{peachSubtext}{HTML}{A66559}
+
+\pagecolor{bgWarm}
+
+\newcommand{\anthropicLabel}[4]{%
+  \def\tmp{#4}%
+  \ifx\tmp\empty
+    {\sffamily\bfseries\small\color{#1}#3}%
+  \else
+    \begin{tabular}{@{}c@{}}
+      {\sffamily\bfseries\small\color{#1}#3}\\[-1pt]
+      {\sffamily\fontsize{8}{9}\selectfont\color{#2}#4}
+    \end{tabular}%
+  \fi
+}{% endraw %}
+{% raw %}\newcommand{\shapeDims}[1]{\ensuremath{[\symup{#1}]}}{% endraw %}
+
+\begin{document}
+\begin{tikzpicture}[
+    x=1cm, y=1cm,
+    font=\sffamily\footnotesize,
+    archEdge/.style={
+      -{Straight Barb[angle=60:2pt 3]},
+      draw=connectorStroke,
+      line width=0.85pt
+    },
+    archEdgeDashed/.style={archEdge, dashed},
+    archCard/.style={
+      rectangle, rounded corners=4pt,
+      draw, line width=0.85pt,
+      minimum width=4.6cm, minimum height=1.1cm,
+      inner sep=5pt,
+      align=center,
+      fill=bgPanel
+    },
+    archCardSmall/.style={archCard, minimum width=2.6cm, minimum height=0.85cm, inner sep=4pt},
+    archCardWide/.style={archCard, minimum width=10.6cm},
+    archGroup/.style={
+      rectangle, rounded corners=8pt,
+      draw=laneStroke, dashed, line width=0.9pt,
+      inner sep=10pt, fill opacity=0
+    },
+    archGroupTitle/.style={
+      font=\sffamily\itshape\small,
+      text=mutedText, fill=bgWarm, inner sep=1.5pt
+    },
+    formulaLabel/.style={
+      font=\sffamily\fontsize{7.5}{9}\selectfont,
+      text=mutedText, anchor=west, align=left, inner sep=2pt
+    },
+    formulaLabelR/.style={
+      font=\sffamily\fontsize{7.5}{9}\selectfont,
+      text=mutedText, anchor=east, align=right, inner sep=2pt
+    },
+    shapeLabel/.style={
+      font=\sffamily\fontsize{7}{8}\selectfont,
+      text=mutedText, fill=bgWarm, inner sep=1.5pt
+    },
+    hcTrack/.style={
+      draw=lavStroke!60, line width=0.4pt
+    },
+    summaryBox/.style={
+      rectangle, rounded corners=4pt,
+      draw=creamStroke, line width=0.7pt,
+      fill=creamFill,
+      inner sep=6pt, align=left,
+      font=\sffamily\fontsize{7.5}{10}\selectfont,
+      text=creamText
+    },
+]
+
+{# ============================================================ #}
+{# Top-level title                                              #}
+{# ============================================================ #}
+\node[anchor=south west, font=\sffamily\bfseries\large, text=inkText]
+    at (-2.7,2.4) {{ '{' }}{{ title }}{{ '}' }};
+\node[anchor=south west, font=\sffamily\itshape\small, text=mutedText]
+    at (-2.7,1.7) {{ '{' }}{{ subtitle }}{{ '}' }};
+
+{# ============================================================ #}
+{# Vertical stack of top-level blocks                           #}
+{# Each block is placed at y = -row*ROWH (ROWH varies by block) #}
+{# ============================================================ #}
+
+{%- set d = spec.model.dims.d %}
+{%- set v = spec.model.dims.v %}
+{%- set L = spec.model.dims.L %}
+{%- set hm = spec.model.dims.get('hm', 1) %}
+{%- set H = spec.model.dims.H %}
+{%- set dh = spec.model.dims.get('dh', 0) %}
+{%- set qr = spec.model.dims.get('qr', 0) %}
+{%- set or_ = spec.model.dims.get('or', 0) %}
+{%- set og = spec.model.dims.get('og', 1) %}
+{%- set Itopk = spec.model.dims.get('index_topk', 0) %}
+{%- set sw = spec.model.dims.get('sliding_window') %}
+{%- set fmoe = spec.model.dims.get('f_moe', spec.model.dims.get('f_dense', 0)) %}
+{%- set E = spec.model.dims.get('E', 0) %}
+{%- set K = spec.model.dims.get('K', 0) %}
+{%- set Es = spec.model.dims.get('Es', 0) %}
+{%- set nh = spec.model.dims.get('nh', 0) %}
+{%- set nm = spec.model.dims.get('nm', 0) %}
+
+% -- input ids node --
+\node[archCard, draw=peachStroke, fill=peachFill] (input)
+    at (0,0)
+    { \anthropicLabel{peachText}{peachSubtext}{input\_ids}{\shapeDims{B,T} (int)} };
+\node[formulaLabel] at ($(input.east)+(0.6,0)$) { vocab\_size = {{ v }} };
+
+% -- token embedding --
+\node[archCard, below=1.0cm of input, draw=peachStroke, fill=peachFill] (embed)
+    { \anthropicLabel{peachText}{peachSubtext}{Token Embedding}{nn.Embedding(v, d)} };
+\node[shapeLabel] at ($(input.south)!0.5!(embed.north)$) {\shapeDims{B,T}};
+\node[formulaLabel] at ($(embed.east)+(0.6,0)$)
+    {\textbf{v $\cdot$ d} = {{ v }} $\cdot$ {{ d }} = {{ fmt_count(v*d) }} };
+\draw[archEdge] (input) -- (embed);
+
+{%- if spec.model.family == 'dsv4' %}
+% -- HC expand --
+\node[archCard, below=1.0cm of embed, draw=lavStroke, fill=lavFill] (hcexpand)
+    { \anthropicLabel{lavText}{lavSubtext}{HC expand}{repeat to hc\_mult={{ hm }} copies} };
+\node[shapeLabel] at ($(embed.south)!0.5!(hcexpand.north)$) {\shapeDims{B,T,{{ d }}}};
+\node[formulaLabel] at ($(hcexpand.east)+(0.6,0)$) { 0 (reshape) };
+\draw[archEdge] (embed) -- (hcexpand);
+\def\stacktop{hcexpand}
+{%- else %}
+\def\stacktop{embed}
+{%- endif %}
+
+{# ============================================================ #}
+{# Transformer block (drawn once with × L annotation)           #}
+{# ============================================================ #}
+
+{%- if spec.model.family == 'dsv4' %}
+
+% Anchor for the block: ~1.4cm below \stacktop
+\coordinate (blockTop) at ($(hcexpand.south)+(0,-1.0)$);
+\node[shapeLabel] at ($(hcexpand.south)+(1.25,-0.45)$) {\shapeDims{B,T,{{ hm }},{{ d }}}};
+
+% --- inside the block: vertical chain ---
+\node[archCardSmall, draw=mintStroke, fill=mintFill, anchor=north] (hcPreA)
+    at (blockTop)
+    { \anthropicLabel{mintText}{mintSubtext}{HC pre}{Sinkhorn $\times$20} };
+
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.45cm of hcPreA] (rmsA)
+    { \anthropicLabel{mintText}{mintSubtext}{RMSNorm}{} };
+
+% --- Attention sub-region (clean top-down layout, no edge crossings) ---
+% Row 1: Q path (left), KV path (right)
+\node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.95cm of rmsA, xshift=-3.0cm] (wqa)
+    { \anthropicLabel{tealText}{tealSubtext}{wq\_a}{d $\to$ qr} };
+\node[archCardSmall, draw=tealStroke, fill=tealFill, right=2.8cm of wqa] (wkv)
+    { \anthropicLabel{tealText}{tealSubtext}{wkv}{d $\to$ dh, Hkv=1} };
+
+% Row 2
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.40cm of wqa] (qnorm)
+    { \anthropicLabel{mintText}{mintSubtext}{q\_norm}{RMSNorm(qr)} };
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.40cm of wkv] (kvnorm)
+    { \anthropicLabel{mintText}{mintSubtext}{kv\_norm}{} };
+
+% Row 3
+\node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.40cm of qnorm] (wqb)
+    { \anthropicLabel{tealText}{tealSubtext}{wq\_b}{qr $\to$ H$\cdot$dh} };
+\node[archCardSmall, draw=creamStroke, fill=creamFill, below=0.40cm of kvnorm] (compr)
+    { \anthropicLabel{creamText}{creamSubtext}{Compressor}{cr $\in$\{4,128\} per layer} };
+
+% Row 4: Indexer (consumes Q-LoRA implicitly + compressed KV; only active for cr=4)
+\node[archCardSmall, draw=creamStroke, fill=creamFill, below=0.65cm of compr, xshift=-1.4cm,
+      minimum width=3.4cm] (idx)
+    { \anthropicLabel{creamText}{creamSubtext}{Indexer (cr=4 only)}{takes Q-LoRA + compressed KV $\to$ top-{{ Itopk }} idx} };
+
+% Row 5: sparse attention (wide, takes Q from left, KV/topk from right)
+\node[archCardSmall, draw=lavStroke, fill=lavFill, below=0.65cm of idx,
+      minimum width=8.6cm, minimum height=1.0cm] (sparse)
+    { \anthropicLabel{lavText}{lavSubtext}{sparse\_attn}{win={{ sw }}; +top-{{ Itopk }} when cr=4} };
+
+% Row 6: O projection
+\node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.55cm of sparse, xshift=-1.6cm,
+      minimum width=3.0cm] (woa)
+    { \anthropicLabel{tealText}{tealSubtext}{wo\_a (grouped)}{og={{ og }}, or={{ or_ }}} };
+\node[archCardSmall, draw=tealStroke, fill=tealFill, right=0.45cm of woa, minimum width=2.6cm] (wob)
+    { \anthropicLabel{tealText}{tealSubtext}{wo\_b}{og$\cdot$or $\to$ d} };
+
+% --- Edges within attention region (all vertical or single-bend, no crossings) ---
+% Branch from rmsA into wqa and wkv. The lower fork keeps the sparse-attention
+% title clear of the connector.
+\draw[archEdge] (rmsA.south) -- ($(rmsA.south)+(0,-0.65)$) -| (wqa.north);
+\draw[archEdge] (rmsA.south) -- ($(rmsA.south)+(0,-0.65)$) -| (wkv.north);
+
+% Q chain
+\draw[archEdge] (wqa) -- (qnorm);
+\draw[archEdge] (qnorm) -- (wqb);
+
+% KV chain
+\draw[archEdge] (wkv) -- (kvnorm);
+\draw[archEdge] (kvnorm) -- (compr);
+
+% Indexer fed by Compressor only (Q-low-rank input is implicit; noted in card subtitle).
+% Uses a single curved bend to avoid crossing other rows.
+\draw[archEdge] (compr.south) to[out=-90, in=90, looseness=0.6] (idx.north);
+
+% Feed sparse_attn from three sources, all with vertical drops aligned to its top edge
+\draw[archEdge] (wqb.south) -- (wqb.south |- sparse.north);
+\draw[archEdge] (compr.south) -- ($(compr.south)+(0,-0.10)$) to[out=-90, in=90, looseness=0.4] ($(sparse.north)+(2.0,0)$);
+\draw[archEdge] (idx.south) -- (idx.south |- sparse.north);
+
+% sparse → wo_a → wo_b
+\draw[archEdge] (sparse.south) -- ($(sparse.south)+(0,-0.25)$) -| (woa.north);
+\draw[archEdge] (woa) -- (wob);
+
+% Box the attention region
+\begin{scope}[on background layer]
+  \node[archGroup, fit=(wqa)(wkv)(qnorm)(kvnorm)(wqb)(compr)(idx)(sparse)(woa)(wob),
+        label={[archGroupTitle, anchor=south west]north west:{Sparse Attention}}]
+       (attnGroup) {};
+\end{scope}
+
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.55cm of attnGroup.south,
+      anchor=north] (hcPostA)
+    { \anthropicLabel{mintText}{mintSubtext}{HC post}{expand $+$ residual mix} };
+
+% Edge from wo_b out into hc_post
+\draw[archEdge] (wob.south) |- ($(hcPostA.east)+(0.6,0)$) -- (hcPostA.east);
+
+\draw[archEdge] (hcPreA) -- (rmsA);
+
+% --- FFN / MoE side ---
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.55cm of hcPostA] (hcPreF)
+    { \anthropicLabel{mintText}{mintSubtext}{HC pre}{} };
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.45cm of hcPreF] (rmsF)
+    { \anthropicLabel{mintText}{mintSubtext}{RMSNorm}{} };
+\draw[archEdge] (hcPostA.south) -- (hcPreF.north);
+
+% Router variants: hash for first {{ nh }} layers, score for the rest.
+\node[archCardSmall, draw=creamStroke, fill=creamFill, below=0.85cm of rmsF, xshift=-2.45cm, minimum width=4.4cm] (routerScore)
+    { \anthropicLabel{creamText}{creamSubtext}{Score Router (sqrtsoftplus)}{$\times$ {{ L - nh }} layers, top-{{ K }}} };
+\node[archCardSmall, draw=creamStroke, fill=creamFill, right=0.50cm of routerScore, minimum width=4.4cm] (routerHash)
+    { \anthropicLabel{creamText}{creamSubtext}{Hash Router (tid2eid)}{$\times$ {{ nh }} layers} };
+\coordinate (routerFork) at ($(rmsF.south)+(0,-0.35)$);
+\coordinate (routerBus) at ($(routerScore.south)!0.5!(routerHash.south)+(0,-0.55)$);
+
+% Experts: routed (0 ... E-1) collapsed to 3 cards + ellipsis, plus shared
+\coordinate (expertRow) at ($(routerBus)+(0,-1.10)$);
+\node[archCardSmall, draw=amberStroke, fill=amberFill] (e0)
+    at ($(expertRow)+(-3.35,0)$)
+    { \anthropicLabel{amberText}{amberSubtext}{expert 0}{SwiGLU} };
+\node[font=\sffamily\bfseries\small, text=mutedText] (edots)
+    at ($(expertRow)+(-1.55,0)$) {$\cdots$};
+\node[archCardSmall, draw=amberStroke, fill=amberFill] (eN)
+    at ($(expertRow)+(0.20,0)$)
+    { \anthropicLabel{amberText}{amberSubtext}{expert {{ E - 1 }}}{} };
+\node[archCardSmall, draw=amberStroke, fill=amberFill] (eshared)
+    at ($(expertRow)+(3.10,0)$)
+    { \anthropicLabel{amberText}{amberSubtext}{shared expert}{always active} };
+
+\node[archCardSmall, draw=creamStroke, fill=creamFill, below=0.65cm of expertRow, minimum width=7.8cm] (moeSum)
+    { \anthropicLabel{creamText}{creamSubtext}{weighted sum}{top-{{ K }} routed $+$ shared} };
+
+\draw[archEdge] (rmsF.south) -- (routerFork) -| (routerScore.north);
+\draw[archEdge] (routerFork) -| (routerHash.north);
+\draw[archEdge] (routerScore.south) -- (routerScore.south |- routerBus) -- (routerBus);
+\draw[archEdge] (routerHash.south) -- (routerHash.south |- routerBus) -- (routerBus);
+\draw[archEdge] (routerBus) -- ($(routerBus)+(0,-0.35)$) -| (e0.north);
+\draw[archEdge] (routerBus) -- ($(routerBus)+(0,-0.35)$) -| (eN.north);
+\draw[archEdge] (routerBus) -- ($(routerBus)+(0,-0.35)$) -| (eshared.north);
+\draw[archEdge] (e0.south) -- (e0.south |- moeSum.north);
+\draw[archEdge] (eN.south) -- (eN.south |- moeSum.north);
+\draw[archEdge, dashed] (eshared.south) -- (eshared.south |- moeSum.north);
+
+% Box MoE
+\begin{scope}[on background layer]
+  \node[archGroup, fit=(routerScore)(routerHash)(e0)(eN)(eshared)(moeSum),
+        label={[archGroupTitle, anchor=south west]north west:{MoE FFN}}]
+       (moeGroup) {};
+\end{scope}
+
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.55cm of moeGroup.south,
+      anchor=north] (hcPostF)
+    { \anthropicLabel{mintText}{mintSubtext}{HC post}{} };
+\draw[archEdge] (moeSum.south) -- (hcPostF.north);
+\draw[archEdge] (hcPreF) -- (rmsF);
+
+% Group the whole transformer block
+\begin{scope}[on background layer]
+  \node[archGroup, fit=(hcPreA)(rmsA)(attnGroup)(hcPostA)(hcPreF)(rmsF)(moeGroup)(hcPostF),
+        label={[archGroupTitle, anchor=south west]north west:{Transformer Block $\times$ {{ L }} layers}}]
+       (blockGroup) {};
+\end{scope}
+
+% Connect from \stacktop into block, and out
+\draw[archEdge] (hcexpand.south) -- (hcPreA.north);
+
+% --- Compress-ratios pattern strip ---
+{%- set ratios = spec.model.compress_ratios %}
+{%- if ratios %}
+% Compress-ratios pattern widget: framed strip with title + cells + legend
+\node[anchor=north west, font=\sffamily\bfseries\fontsize{7.2}{8.3}\selectfont, text=inkText,
+      text width=8.2cm, align=left]
+    at ($(blockGroup.south east)+(0.55,-0.55)$) (cropattern_lab)
+    {Per-layer attention pattern (43 main layers + MTP cr=0):};
+{%- set xstep = 0.18 %}
+{%- for r in ratios %}
+\node[draw=laneStroke, line width=0.3pt, minimum width={{ xstep }}cm, minimum height=0.60cm, inner sep=0pt,
+    fill={{ {0:'bgPanel', 4:'amberFill', 128:'peachFill'}.get(r, 'creamFill') }}]
+    at ($(cropattern_lab.south west)+({{ "%.3f"|format((loop.index0 + 0.5) * xstep) }},-0.35)$) (crocell{{ loop.index0 }})
+    {};
+{%- endfor %}
+\node[draw=laneStroke, line width=0.3pt, minimum width={{ xstep }}cm, minimum height=0.60cm, inner sep=0pt,
+    fill=bgPanel]
+    at ($(cropattern_lab.south west)+({{ "%.3f"|format((ratios|length + 1.0) * xstep) }},-0.35)$) (crocellMtp)
+    {};
+\node[anchor=north west, font=\sffamily\fontsize{6.9}{8}\selectfont, text=mutedText,
+      text width=8.2cm, align=left]
+    at ($(crocell0.south west)+(0,-0.16)$) (crolegend)
+    {{ '{' }}0 = full\quad|\quad 4 = overlap + Indexer\quad|\quad 128 = block\quad|\quad final 0 = MTP{{ '}' }};
+% Frame the whole widget so it doesn't read as stray caption
+\begin{scope}[on background layer]
+  \node[archGroup, draw=creamStroke, dashed=false, line width=0.4pt,
+        inner sep=6pt,
+        fit=(cropattern_lab) (crocell0) (crocell{{ ratios|length - 1 }}) (crocellMtp) (crolegend)]
+       (croBox) {};
+\end{scope}
+{%- endif %}
+
+% --- HC pre/post formula labels (one annotation, the four are identical) ---
+\node[formulaLabel] at ($(hcPreA.east)+(0.4,0)$)
+    {(2+hm)$\cdot$hm$\cdot$d = {{ fmt_count((2+hm)*hm*d) }}\\
+     paper: $X_{l+1}=B_lX_l+C_lF_l(A_lX_l)$\\
+     $B_l=\symup{SK}_{20}(\exp \tilde B_l)$};
+
+% --- continue main flow: final norm, lm head ---
+\node[archCard, below=2.0cm of blockGroup, draw=mintStroke, fill=mintFill] (finalNorm)
+    { \anthropicLabel{mintText}{mintSubtext}{Final RMSNorm}{} };
+\draw[archEdge] (hcPostF.south) -- (finalNorm.north);
+\node[shapeLabel] at ($(hcPostF.south)!0.52!(finalNorm.north)$) {\shapeDims{B,T,{{ hm }},{{ d }}}};
+\node[formulaLabel] at ($(finalNorm.east)+(0.6,0)$) {d = {{ fmt_count(d) }}};
+
+\node[archCard, below=1.0cm of finalNorm, draw=peachStroke, fill=peachFill] (lmhead)
+    { \anthropicLabel{peachText}{peachSubtext}{HC LM Head}{HC-aware projection $\to$ vocab} };
+\draw[archEdge] (finalNorm) -- (lmhead);
+\node[formulaLabel] at ($(lmhead.east)+(0.45,0)$)
+    {v$\cdot$d\\$+$ (2+hm)$\cdot$hm$\cdot$d\\= {{ fmt_count(v*d + (2+hm)*hm*d) }}};
+
+\node[archCard, below=0.8cm of lmhead, draw=peachStroke, fill=peachFill] (logits)
+    { \anthropicLabel{peachText}{peachSubtext}{logits}{} };
+\draw[archEdge] (lmhead) -- (logits);
+\node[shapeLabel] at ($(lmhead.south)!0.5!(logits.north)$) {\shapeDims{B,T,{{ v }}}};
+
+{# --- MTP head branch --- #}
+{%- if nm > 0 and opts.show_mtp %}
+% Explicit branching dot on the main flow at finalNorm output
+\node[circle, draw=connectorStroke, fill=bgPanel, line width=0.7pt,
+      inner sep=1.2pt] (mtpTap) at ($(finalNorm.south)!0.5!(lmhead.north)$) {};
+\node[font=\sffamily\itshape\fontsize{6.5}{8}\selectfont, text=mutedText, anchor=west]
+    at ($(mtpTap)+(0.2,0.18)$) {tap to MTP};
+\node[archCard, right=3.5cm of lmhead, draw=lavStroke, fill=lavFill] (mtp)
+    { \anthropicLabel{lavText}{lavSubtext}{MTPBlock $\times$ {{ nm }}}{e/h proj + full Block(cr=0) + HC head} };
+\draw[archEdge, dashed] (mtpTap) -| (mtp.north);
+\node[archCard, below=0.8cm of mtp, draw=peachStroke, fill=peachFill] (mtpLogits)
+    { \anthropicLabel{peachText}{peachSubtext}{MTP logits}{next-{{ nm }} prediction} };
+\draw[archEdge] (mtp) -- (mtpLogits);
+\node[formulaLabelR] at ($(mtp.south west)+(-0.25,-0.33)$)
+    {2$\cdot$d$^2$ + 2$\cdot$d\\$+$ full Block + HC head\\= {{ spec.model.summary.mtp_label }}};
+{%- endif %}
+
+{# --- Right-column formula annotations on attention sub-blocks (anchored to attnGroup.east) --- #}
+\node[formulaLabel] at ($(wkv.east -| attnGroup.east)+(0.4,0)$)
+    {Q-LoRA: d$\cdot$qr + qr$\cdot$H$\cdot$dh = {{ fmt_count(d*qr + qr*H*dh) }}\\
+     $c^Q_t=h_tW_{DQ}$;\quad $q_t=c^Q_tW_{UQ}$};
+\node[formulaLabel] at ($(kvnorm.east -| attnGroup.east)+(0.4,0)$)
+    {KV: d$\cdot$dh = {{ fmt_count(d*dh) }}};
+\node[formulaLabel] at ($(compr.east -| attnGroup.east)+(0.4,0)$)
+    {Compressor (cr=4): {{ fmt_count(2*d*2*dh + 2*4*2*dh + dh) }}\\
+     Compressor (cr=128): {{ fmt_count(2*d*dh + 128*dh + dh) }}\\
+     $C_i^{\symup{comp}}=\sum_j S_j\odot C_j$};
+\node[formulaLabel] at ($(idx.east -| attnGroup.east)+(0.4,0)$)
+    {Indexer (cr=4): qr$\cdot$Ih$\cdot$Id + d$\cdot$Ih + Compressor\\
+     $I_{t,s}=\sum_h w^I_{t,h}\symup{ReLU}(q^I_{t,h}K^I_s)$\\
+     $C_t^{\symup{sel}}=\symup{TopK}_{512}(I_{t,:})$};
+\node[formulaLabel] at ($(sparse.east -| attnGroup.east)+(0.4,0)$)
+    {sparse\_attn: top-{{ Itopk }} indices (no params)\\
+     $o_{t,i}=\symup{CoreAttn}(q_{t,i},K=C_t^{\symup{sel}}\cup W_t,$\\
+     \hspace{1.0em}$V=C_t^{\symup{sel}}\cup W_t)$};
+\node[formulaLabel] at ($(wob.east -| attnGroup.east)+(0.4,0)$)
+    {O-LoRA: H$\cdot$dh$\cdot$or + og$\cdot$or$\cdot$d = {{ fmt_count(H*dh*or_ + og*or_*d) }}\\
+     split $H$ heads into $g$ groups, then project $g\cdot d_g\to d$};
+
+{# --- MoE annotations --- #}
+\node[formulaLabel] at ($(routerHash.east -| moeGroup.east)+(0.6,0)$)
+    {Score Router: d$\cdot$E = {{ fmt_count(d*E) }}\\
+     $a_e=\sqrt{\symup{softplus}(hW_e)}$, top-{{ K }}\\
+     Hash Router: v$\cdot$K = {{ fmt_count(v*K) }}\\
+     $e=\symup{tid2eid}[\symup{token}]$};
+\node[formulaLabel] at ($(eshared.east -| moeGroup.east)+(0.6,0.10)$)
+    {per expert: 3$\cdot$d$\cdot$f = {{ fmt_count(3*d*fmoe) }}};
+\node[formulaLabel] at ($(moeSum.east -| moeGroup.east)+(0.6,0.10)$)
+    {experts total: ({{ E }}+{{ Es }})$\cdot$3$\cdot$d$\cdot$f = {{ fmt_count((E+Es)*3*d*fmoe) }}};
+\node[formulaLabel] at ($(moeSum.east -| moeGroup.east)+(0.6,-0.20)$)
+    {active: ({{ K }}+{{ Es }})$\cdot$3$\cdot$d$\cdot$f = {{ fmt_count((K+Es)*3*d*fmoe) }}};
+
+{# ============================================================ #}
+{# Bottom-right summary box                                     #}
+{# ============================================================ #}
+{%- if nm > 0 and opts.show_mtp %}
+\node[summaryBox, anchor=west] at ([xshift=1.1cm]mtpLogits.east) {
+{%- else %}
+\node[summaryBox, anchor=west] at ([xshift=2.5cm]logits.east) {
+{%- endif %}
+\begin{tabular}{@{}ll@{}}
+\textbf{Model} & {{ spec.model.id|escape_tex }} \\
+Family & {{ spec.model.family }} ({{ spec.model.model_type|escape_tex }}) \\
+Total params & \textbf{ {{- spec.model.summary.total_label -}} } (main stack) \\
+Active per token & \textbf{ {{- spec.model.summary.active_label -}} } \\
+{%- if nm > 0 %}
+MTP head & {{ spec.model.summary.mtp_label }} \\
+Total + MTP & {{ spec.model.summary.total_with_mtp_label }} \\
+{%- endif %}
+{%- if spec.model.summary.quantization %}
+Quantization & {{ spec.model.summary.quantization }}{%- if spec.model.family == 'dsv4' %}, BF16 gates/norms{%- endif %} \\
+{%- endif %}
+Layers (L) & {{ L }} \\
+Hidden (d) & {{ d }} \\
+Heads (H/Hkv) & {{ H }} / {{ spec.model.dims.Hkv }} \\
+Head dim (dh) & {{ dh }} \\
+{%- if spec.model.dims.qr %}
+Q LoRA rank & {{ qr }} \\
+{%- endif %}
+{%- if spec.model.dims.get('or') %}
+O LoRA / groups & {{ or_ }} / {{ og }} \\
+{%- endif %}
+{%- if E > 0 %}
+Routed experts & {{ E }} (top-{{ K }}) \\
+Shared experts & {{ Es }} \\
+MoE FFN dim (f) & {{ fmoe }} \\
+{%- endif %}
+{%- if hm > 1 %}
+HC mult (hm) & {{ hm }} \\
+{%- endif %}
+{%- if Itopk %}
+Index top-K & {{ Itopk }} \\
+Sliding window & {{ sw }} \\
+{%- endif %}
+\end{tabular}
+};
+
+{%- else %}
+{# ============================================================ #}
+{# Non-DSv4 simple stack (mha / gqa / mla)                      #}
+{# ============================================================ #}
+\node[archCardWide, below=1.2cm of \stacktop, draw=lavStroke, fill=lavFill] (block)
+    { \anthropicLabel{lavText}{lavSubtext}{Transformer Block $\times$ {{ L }} layers}{family={{ spec.model.family }}} };
+\draw[archEdge] (\stacktop) -- (block);
+
+\node[archCard, below=1.2cm of block, draw=mintStroke, fill=mintFill] (finalNorm)
+    { \anthropicLabel{mintText}{mintSubtext}{Final RMSNorm}{} };
+\draw[archEdge] (block) -- (finalNorm);
+
+\node[archCard, below=0.8cm of finalNorm, draw=peachStroke, fill=peachFill] (lmhead)
+    { \anthropicLabel{peachText}{peachSubtext}{LM Head}{} };
+\draw[archEdge] (finalNorm) -- (lmhead);
+
+\node[archCard, below=0.8cm of lmhead, draw=peachStroke, fill=peachFill] (logits)
+    { \anthropicLabel{peachText}{peachSubtext}{logits}{} };
+\draw[archEdge] (lmhead) -- (logits);
+
+\node[summaryBox, anchor=north west] at ([xshift=2cm]block.east) {
+\begin{tabular}{@{}ll@{}}
+\textbf{Model} & {{ spec.model.id|escape_tex }} \\
+Family & {{ spec.model.family }} \\
+Total params & {{ spec.model.summary.total_label }} \\
+Active per token & {{ spec.model.summary.active_label }} \\
+\end{tabular}
+};
+
+{%- endif %}
+
+\end{tikzpicture}
+\end{document}
