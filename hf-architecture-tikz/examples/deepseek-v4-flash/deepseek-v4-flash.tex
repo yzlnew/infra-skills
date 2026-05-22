@@ -12,13 +12,9 @@
   \IfFontExistsTF{SF Pro Text}{%
     \setsansfont{SF Pro Text}[BoldFont=SF Pro Text Semibold]
   }{}%
-  \IfFontExistsTF{JetBrains Mono}{%
-    \setmonofont{JetBrains Mono}
-  }{%
-    \IfFontExistsTF{SF Mono}{%
-      \setmonofont{SF Mono}
-    }{}%
-  }%
+  \IfFontExistsTF{SF Mono}{%
+    \setmonofont{SF Mono}
+  }{}%
 }{}
 
 % --- Anthropic Palette ---
@@ -126,41 +122,15 @@
       font=\sffamily\fontsize{7.5}{10}\selectfont,
       text=creamText
     },
-    hintBox/.style={
-      rectangle, rounded corners=4pt,
-      draw=lavStroke, line width=0.6pt,
-      fill=bgPanel,
-      inner sep=6pt, align=left,
-      font=\sffamily\fontsize{7.0}{8.6}\selectfont,
-      text=inkText
-    },
-    hintTitle/.style={
-      font=\sffamily\bfseries\fontsize{7.6}{9}\selectfont,
-      text=lavSubtext
-    },
-    % Conditional sublayer (Compressor / Indexer): not present in every layer.
-    % Dashed border + reduced fill opacity signals "layer-dependent".
-    condCardSmall/.style={
-      archCardSmall, dashed, fill opacity=0.45, draw opacity=0.85
-    },
-    % RoPE box: positional encoding, per-token deterministic transform.
-    ropeBox/.style={
-      archCardSmall,
-      draw=peachStroke, fill=peachFill,
-      minimum width=3.0cm
-    },
 ]
 
 
 
 
-% Title and subtitle aligned with blockGroup's left dashed edge.
-% leftRailAnchor sits at hcPreA.west - 4.6cm = (0 - 1.3) - 4.6 = -5.9; blockGroup
-% expands by inner_sep=10pt (=0.21cm), so its west.x ≈ -6.11. Hardcoded x=-6.1.
 \node[anchor=south west, font=\sffamily\bfseries\large, text=inkText]
-    at (-6.1,2.4) {deepseek-ai/DeepSeek-V4-Flash};
+    at (-2.7,2.4) {deepseek-ai/DeepSeek-V4-Flash};
 \node[anchor=south west, font=\sffamily\itshape\small, text=mutedText]
-    at (-6.1,1.7) {DSV4 family · open-weight MoE LLM · 1M context · diagram by @yzlnew};
+    at (-2.7,1.7) {DSV4 family · 284.44B total · 13.90B active per token · hash\_routing, moe, mtp, shared\_experts, sliding\_window, swiglu\_clip};
 
 
 
@@ -182,7 +152,7 @@
 \draw[archEdge] (input) -- (embed);
 % -- HC expand --
 \node[archCard, below=1.0cm of embed, draw=lavStroke, fill=lavFill] (hcexpand)
-    { \anthropicLabel{lavText}{lavSubtext}{HC expand}{expand to hc\_mult=4 streams} };
+    { \anthropicLabel{lavText}{lavSubtext}{HC expand}{repeat to hc\_mult=4 copies} };
 \node[shapeLabel] at ($(embed.south)!0.5!(hcexpand.north)$) {\shapeDims{B,T,4096}};
 \node[formulaLabel] at ($(hcexpand.east)+(0.6,0)$) { 0 (reshape) };
 \draw[archEdge] (embed) -- (hcexpand);
@@ -192,10 +162,8 @@
 
 
 
-% Anchor for the block: 1.5cm below \stacktop. Wider gap leaves clear space
-% between hcexpand and the blockGroup top boundary so neither the dashed
-% block frame nor the resTapA residual tap (above hcPreA) crowds hcexpand.
-\coordinate (blockTop) at ($(hcexpand.south)+(0,-1.5)$);
+% Anchor for the block: ~1.4cm below \stacktop
+\coordinate (blockTop) at ($(hcexpand.south)+(0,-1.0)$);
 \node[shapeLabel] at ($(hcexpand.south)+(1.25,-0.45)$) {\shapeDims{B,T,4,4096}};
 
 % --- inside the block: vertical chain ---
@@ -206,104 +174,82 @@
 \node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.45cm of hcPreA] (rmsA)
     { \anthropicLabel{mintText}{mintSubtext}{RMSNorm}{} };
 
-% --- Attention sub-region — symmetric layout around the main vertical axis ---
-% Row 1: Q path (left, x=-3) and KV path (right, x=+3), both relative to rmsA.
+% --- Attention sub-region (clean top-down layout, no edge crossings) ---
+% Row 1: Q path (left), KV path (right)
 \node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.95cm of rmsA, xshift=-3.0cm] (wqa)
-    { \anthropicLabel{tealText}{tealSubtext}{wq\_a}{Q down-proj: d$\to$qr} };
-\node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.95cm of rmsA, xshift=+3.0cm] (wkv)
-    { \anthropicLabel{tealText}{tealSubtext}{wkv}{KV proj: d$\to$dh, Hkv=1} };
+    { \anthropicLabel{tealText}{tealSubtext}{wq\_a}{d $\to$ qr} };
+\node[archCardSmall, draw=tealStroke, fill=tealFill, right=2.8cm of wqa] (wkv)
+    { \anthropicLabel{tealText}{tealSubtext}{wkv}{d $\to$ dh, Hkv=1} };
 
-% Row 2: RMSNorms.
+% Row 2
 \node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.40cm of wqa] (qnorm)
-    { \anthropicLabel{mintText}{mintSubtext}{q\_a\_norm}{RMSNorm on Q-LoRA} };
+    { \anthropicLabel{mintText}{mintSubtext}{q\_norm}{RMSNorm(qr)} };
 \node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.40cm of wkv] (kvnorm)
-    { \anthropicLabel{mintText}{mintSubtext}{kv\_norm}{RMSNorm on KV} };
+    { \anthropicLabel{mintText}{mintSubtext}{kv\_norm}{} };
 
-% Row 3: Q up-proj (left); RoPE on KV (right).
+% Row 3
 \node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.40cm of qnorm] (wqb)
-    { \anthropicLabel{tealText}{tealSubtext}{wq\_b}{Q up-proj: qr$\to$H$\cdot$dh} };
-\node[ropeBox, below=0.40cm of kvnorm] (ropeKV)
-    { \anthropicLabel{peachText}{peachSubtext}{RoPE (KV)}{partial: first 64 of dh} };
+    { \anthropicLabel{tealText}{tealSubtext}{wq\_b}{qr $\to$ H$\cdot$dh} };
+\node[archCardSmall, draw=creamStroke, fill=creamFill, below=0.40cm of kvnorm] (compr)
+    { \anthropicLabel{creamText}{creamSubtext}{Compressor}{cr $\in$\{4,128\} per layer} };
 
-% Row 4: RoPE on Q (left); Compressor (right, conditional — absent if cr=0).
-\node[ropeBox, below=0.40cm of wqb] (ropeQ)
-    { \anthropicLabel{peachText}{peachSubtext}{RoPE (Q)}{partial: first 64 of dh} };
-\node[condCardSmall, draw=creamStroke, fill=creamFill, below=0.40cm of ropeKV] (compr)
-    { \anthropicLabel{creamText}{creamSubtext}{Compressor}{cr=4 (CSA) / 128 (HCA)} };
-
-% Row 5: Indexer — centered, conditional (CSA only, cr=4).
-\node[condCardSmall, draw=creamStroke, fill=creamFill, below=0.65cm of compr, xshift=-3.0cm,
+% Row 4: Indexer (consumes Q-LoRA implicitly + compressed KV; only active for cr=4)
+\node[archCardSmall, draw=creamStroke, fill=creamFill, below=0.65cm of compr, xshift=-1.4cm,
       minimum width=3.4cm] (idx)
-    { \anthropicLabel{creamText}{creamSubtext}{Indexer}{Lightning Indexer: top-512 (CSA only)} };
+    { \anthropicLabel{creamText}{creamSubtext}{Indexer (cr=4 only)}{takes Q-LoRA + compressed KV $\to$ top-512 idx} };
 
-% Row 6: sparse attention — centered, idx already centered so straight below.
+% Row 5: sparse attention (wide, takes Q from left, KV/topk from right)
 \node[archCardSmall, draw=lavStroke, fill=lavFill, below=0.65cm of idx,
       minimum width=8.6cm, minimum height=1.0cm] (sparse)
-    { \anthropicLabel{lavText}{lavSubtext}{sparse\_attn}{shared-KV MQA + sink; win=128 $\cup$ (top-512 / all comp.)} };
+    { \anthropicLabel{lavText}{lavSubtext}{sparse\_attn}{win=128; +top-512 when cr=4} };
 
-% Row 7: Inverse RoPE on attention output (peeled off the absolute-position carry from V).
-\node[ropeBox, below=0.50cm of sparse, minimum width=3.6cm] (ropeInv)
-    { \anthropicLabel{peachText}{peachSubtext}{RoPE$^{-1}$ (output)}{shared-KV inverse: cos, $-$sin} };
-
-% Row 8: grouped O projection — wo_a above wo_b, both centered.
-\node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.40cm of ropeInv,
+% Row 6: O projection
+\node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.55cm of sparse, xshift=-1.6cm,
       minimum width=3.0cm] (woa)
-    { \anthropicLabel{tealText}{tealSubtext}{wo\_a (grouped)}{Output LoRA: og=8 grp $\times$ or=1024} };
-\node[archCardSmall, draw=tealStroke, fill=tealFill, below=0.40cm of woa,
-      minimum width=3.0cm] (wob)
-    { \anthropicLabel{tealText}{tealSubtext}{wo\_b}{Output up-proj: og$\cdot$or$\to$d} };
+    { \anthropicLabel{tealText}{tealSubtext}{wo\_a (grouped)}{og=8, or=1024} };
+\node[archCardSmall, draw=tealStroke, fill=tealFill, right=0.45cm of woa, minimum width=2.6cm] (wob)
+    { \anthropicLabel{tealText}{tealSubtext}{wo\_b}{og$\cdot$or $\to$ d} };
 
-% --- Edges within attention region (vertical chains, polylines only) ---
-% Branch from rmsA into wqa (left) and wkv (right). The lower fork clears the
-% Sparse Attention title.
+% --- Edges within attention region (all vertical or single-bend, no crossings) ---
+% Branch from rmsA into wqa and wkv. The lower fork keeps the sparse-attention
+% title clear of the connector.
 \draw[archEdge] (rmsA.south) -- ($(rmsA.south)+(0,-0.65)$) -| (wqa.north);
 \draw[archEdge] (rmsA.south) -- ($(rmsA.south)+(0,-0.65)$) -| (wkv.north);
 
-% Q chain (left column): wqa → q_a_norm → wq_b → RoPE_q → sparse
+% Q chain
 \draw[archEdge] (wqa) -- (qnorm);
 \draw[archEdge] (qnorm) -- (wqb);
-\draw[archEdge] (wqb) -- (ropeQ);
-\draw[archEdge] (ropeQ.south) -- (ropeQ.south |- sparse.north);
 
-% KV chain (right column): wkv → kv_norm → RoPE_kv → (Compressor cond.) → ...
+% KV chain
 \draw[archEdge] (wkv) -- (kvnorm);
-\draw[archEdge] (kvnorm) -- (ropeKV);
-\draw[archEdge, dashed, draw opacity=0.85] (ropeKV) -- (compr);
+\draw[archEdge] (kvnorm) -- (compr);
 
-% Compressor (right x=+3) → Indexer (centered x=0): Z-shaped polyline
-% (vertical → horizontal → vertical), 2 bends. The intermediate horizontal
-% segment sits 0.30cm below compr so the bend is clear of compr's bottom edge.
-\coordinate (cprIdxMid) at ($(compr.south) + (0,-0.30)$);
-\draw[archEdge, dashed, draw opacity=0.85]
-    (compr.south) -- (cprIdxMid) -- (cprIdxMid -| idx.north) -- (idx.north);
+% Indexer fed by Compressor only (Q-low-rank input is implicit; noted in card subtitle).
+% Uses a single curved bend to avoid crossing other rows.
+\draw[archEdge] (compr.south) to[out=-90, in=90, looseness=0.6] (idx.north);
 
-% Compressor → Sparse: polyline straight down (compr.x=+3 lands inside sparse.north span).
-\draw[archEdge, dashed, draw opacity=0.85] (compr.south) -- (compr.south |- sparse.north);
+% Feed sparse_attn from three sources, all with vertical drops aligned to its top edge
+\draw[archEdge] (wqb.south) -- (wqb.south |- sparse.north);
+\draw[archEdge] (compr.south) -- ($(compr.south)+(0,-0.10)$) to[out=-90, in=90, looseness=0.4] ($(sparse.north)+(2.0,0)$);
+\draw[archEdge] (idx.south) -- (idx.south |- sparse.north);
 
-% Indexer → Sparse: straight down (idx and sparse both centered).
-\draw[archEdge, dashed, draw opacity=0.85] (idx.south) -- (idx.south |- sparse.north);
-
-% sparse → RoPE_inv → wo_a → wo_b (main axis, straight vertical chain)
-\draw[archEdge] (sparse.south) -- (ropeInv.north);
-\draw[archEdge] (ropeInv.south) -- (woa.north);
-\draw[archEdge] (woa.south) -- (wob.north);
+% sparse → wo_a → wo_b
+\draw[archEdge] (sparse.south) -- ($(sparse.south)+(0,-0.25)$) -| (woa.north);
+\draw[archEdge] (woa) -- (wob);
 
 % Box the attention region
 \begin{scope}[on background layer]
-  \node[archGroup, fit=(rmsA)(wqa)(wkv)(qnorm)(kvnorm)(wqb)(ropeKV)(ropeQ)(compr)(idx)(sparse)(ropeInv)(woa)(wob),
+  \node[archGroup, fit=(wqa)(wkv)(qnorm)(kvnorm)(wqb)(compr)(idx)(sparse)(woa)(wob),
         label={[archGroupTitle, anchor=south west]north west:{Sparse Attention}}]
        (attnGroup) {};
 \end{scope}
 
-% hcPostA: anchored on the main axis (rmsA.x = 0), not on attnGroup's south-center,
-% so it stays aligned with hcPreA / rmsA / hcPreF / rmsF / hcPostF / hcHead even if
-% blockGroup's bounding box becomes asymmetric (e.g. due to the leftRailAnchor).
-\node[archCardSmall, draw=mintStroke, fill=mintFill, anchor=north]
-    at ($(rmsA |- attnGroup.south) + (0, -0.55)$) (hcPostA)
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.55cm of attnGroup.south,
+      anchor=north] (hcPostA)
     { \anthropicLabel{mintText}{mintSubtext}{HC post}{expand $+$ residual mix} };
 
-% Edge from wo_b out into hc_post — direct vertical (both nodes on the main axis)
-\draw[archEdge] (wob.south) -- (hcPostA.north);
+% Edge from wo_b out into hc_post
+\draw[archEdge] (wob.south) |- ($(hcPostA.east)+(0.6,0)$) -- (hcPostA.east);
 
 \draw[archEdge] (hcPreA) -- (rmsA);
 
@@ -314,121 +260,58 @@
     { \anthropicLabel{mintText}{mintSubtext}{RMSNorm}{} };
 \draw[archEdge] (hcPostA.south) -- (hcPreF.north);
 
-% --- Router (merged, layer-conditional internally via config.num_hash_layers=3) ---
-% Single router card: each layer picks ONE implementation, not both.
-%   first 3 layers (0,1,2): Hash Router  — fixed tid2eid[token_id] lookup
-%   remaining 40 layers   : Score Router — sqrtsoftplus(W·h), top-6
-% (The OR semantic is communicated by the subtitle, not by separate boxes.)
-\node[archCardSmall, draw=creamStroke, fill=creamFill,
-      below=0.85cm of rmsF, minimum width=8.0cm] (router)
-    { \anthropicLabel{creamText}{creamSubtext}{Router (top-6 gate)}{Score (sqrtsoftplus) for layers 3..42 \; / \; Hash (tid2eid) for first 3 layers} };
-\draw[archEdge] (rmsF.south) -- (router.north);
+% Router variants: hash for first 3 layers, score for the rest.
+\node[archCardSmall, draw=creamStroke, fill=creamFill, below=0.85cm of rmsF, xshift=-2.45cm, minimum width=4.4cm] (routerScore)
+    { \anthropicLabel{creamText}{creamSubtext}{Score Router (sqrtsoftplus)}{$\times$ 40 layers, top-6} };
+\node[archCardSmall, draw=creamStroke, fill=creamFill, right=0.50cm of routerScore, minimum width=4.4cm] (routerHash)
+    { \anthropicLabel{creamText}{creamSubtext}{Hash Router (tid2eid)}{$\times$ 3 layers} };
+\coordinate (routerFork) at ($(rmsF.south)+(0,-0.35)$);
+\coordinate (routerBus) at ($(routerScore.south)!0.5!(routerHash.south)+(0,-0.55)$);
 
-% Fan-out bus below the router (single point that broadcasts to all experts).
-% No arrowhead on the router→bus segment — the bus is a fork point, not a
-% destination. Arrowheads only appear on the bus→expert segments below.
-\coordinate (routerBus) at ($(router.south)+(0,-0.55)$);
-\draw[archEdge, -] (router.south) -- (routerBus);
-
-% Experts row — symmetric around main axis (x=0). expert 255 sits ON the
-% central axis so the router→eN edge is a clean straight vertical line.
-%   e0 (-3.6) ... edots (-1.8) ... eN (0.0) | eshared (+3.6)
-% Card width=2.6cm, so eN.east=+1.3 and eshared.west=+2.3 → 1.0cm gap.
-\coordinate (expertRow) at ($(routerBus)+(0,-1.20)$);
+% Experts: routed (0 ... E-1) collapsed to 3 cards + ellipsis, plus shared
+\coordinate (expertRow) at ($(routerBus)+(0,-1.10)$);
 \node[archCardSmall, draw=amberStroke, fill=amberFill] (e0)
-    at ($(expertRow)+(-3.60,0)$)
-    { \anthropicLabel{amberText}{amberSubtext}{expert 0}{} };
+    at ($(expertRow)+(-3.35,0)$)
+    { \anthropicLabel{amberText}{amberSubtext}{expert 0}{SwiGLU} };
 \node[font=\sffamily\bfseries\small, text=mutedText] (edots)
-    at ($(expertRow)+(-1.80,0)$) {$\cdots$};
+    at ($(expertRow)+(-1.55,0)$) {$\cdots$};
 \node[archCardSmall, draw=amberStroke, fill=amberFill] (eN)
-    at ($(expertRow)+(0.00,0)$)
+    at ($(expertRow)+(0.20,0)$)
     { \anthropicLabel{amberText}{amberSubtext}{expert 255}{} };
 \node[archCardSmall, draw=amberStroke, fill=amberFill] (eshared)
-    at ($(expertRow)+(+3.60,0)$)
+    at ($(expertRow)+(3.10,0)$)
     { \anthropicLabel{amberText}{amberSubtext}{shared expert}{always active} };
 
-% weighted_sum — wider gap (1.0cm) below expertRow; 8.0cm wide, centered on x=0.
-\node[archCardSmall, draw=creamStroke, fill=creamFill,
-      below=1.00cm of expertRow, minimum width=8.0cm] (moeSum)
+\node[archCardSmall, draw=creamStroke, fill=creamFill, below=0.65cm of expertRow, minimum width=7.8cm] (moeSum)
     { \anthropicLabel{creamText}{creamSubtext}{weighted sum}{top-6 routed $+$ shared} };
 
-% routerBus → experts. eN sits on the main axis, so its edge is straight vertical.
-% e0 / eshared use L-shape (drop then horizontal) since they're off-axis.
-\draw[archEdge] (routerBus) -| (e0.north);
-\draw[archEdge] (routerBus) -- (eN.north);
-\draw[archEdge] (routerBus) -| (eshared.north);
-
-% Experts → weighted_sum (vertical drops; eshared dashed = always active).
+\draw[archEdge] (rmsF.south) -- (routerFork) -| (routerScore.north);
+\draw[archEdge] (routerFork) -| (routerHash.north);
+\draw[archEdge] (routerScore.south) -- (routerScore.south |- routerBus) -- (routerBus);
+\draw[archEdge] (routerHash.south) -- (routerHash.south |- routerBus) -- (routerBus);
+\draw[archEdge] (routerBus) -- ($(routerBus)+(0,-0.35)$) -| (e0.north);
+\draw[archEdge] (routerBus) -- ($(routerBus)+(0,-0.35)$) -| (eN.north);
+\draw[archEdge] (routerBus) -- ($(routerBus)+(0,-0.35)$) -| (eshared.north);
 \draw[archEdge] (e0.south) -- (e0.south |- moeSum.north);
 \draw[archEdge] (eN.south) -- (eN.south |- moeSum.north);
 \draw[archEdge, dashed] (eshared.south) -- (eshared.south |- moeSum.north);
 
 % Box MoE
 \begin{scope}[on background layer]
-  \node[archGroup, fit=(rmsF)(router)(e0)(eN)(eshared)(moeSum),
+  \node[archGroup, fit=(routerScore)(routerHash)(e0)(eN)(eshared)(moeSum),
         label={[archGroupTitle, anchor=south west]north west:{MoE FFN}}]
        (moeGroup) {};
 \end{scope}
 
-% hcPostF: same explicit main-axis anchoring as hcPostA.
-\node[archCardSmall, draw=mintStroke, fill=mintFill, anchor=north]
-    at ($(rmsA |- moeGroup.south) + (0, -0.55)$) (hcPostF)
+\node[archCardSmall, draw=mintStroke, fill=mintFill, below=0.55cm of moeGroup.south,
+      anchor=north] (hcPostF)
     { \anthropicLabel{mintText}{mintSubtext}{HC post}{} };
 \draw[archEdge] (moeSum.south) -- (hcPostF.north);
 \draw[archEdge] (hcPreF) -- (rmsF);
 
-% --- mHC residual skip (eq. 1 second term: comb @ X_l, 4-stream X_l bypasses sublayer) ---
-% Invisible left-rail anchor. Included in blockGroup's `fit` to widen the block boundary
-% so the orthogonal skip routes have clear room outside attnGroup / moeGroup on the left.
-\node[draw=none, inner sep=0pt, outer sep=0pt, minimum size=0pt]
-    (leftRailAnchor) at ($(hcPreA.west) + (-4.6, 0)$) {};
-
-% Phantom anchor above hcPreA — pushes blockGroup's top dashed boundary up so it
-% encloses the residual taps (resTapA / resTapF, which sit ~0.30cm above hcPre.north)
-% with comfortable padding instead of crowding hcPreA's title.
-\node[draw=none, inner sep=0pt, outer sep=0pt, minimum size=0pt]
-    (blockTopAnchor) at ($(hcPreA.north) + (0, 0.55)$) {};
-
-% Right-angle solid skip routes: tap above hcPre (on the line that brings X_l in)
-% -> left rail -> drop down -> hcPost.west. The tap above hcPre signals that
-% X_l is the *block input*, before any HC mixing — code-wise:
-%   post, comb, collapsed = self.attn_hc(hidden_states)        # hcPre derives mix
-%   hidden_states = post * attn + comb @ hidden_states          # original hs reused
-\coordinate (resTapA) at ($(hcPreA.north)+(0,0.30)$);
-\coordinate (resTapF) at ($(hcPreF.north)+(0,0.30)$);
-
-\draw[archEdge]
-    (resTapA) -- (resTapA -| leftRailAnchor)
-              -- (hcPostA.west -| leftRailAnchor)
-              -- (hcPostA.west);
-
-\draw[archEdge]
-    (resTapF) -- (resTapF -| leftRailAnchor)
-              -- (hcPostF.west -| leftRailAnchor)
-              -- (hcPostF.west);
-
-% Labels on the vertical rail segments
-\node[shapeLabel, text=lavSubtext, fill=bgWarm, anchor=center,
-      font=\sffamily\fontsize{6.5}{7.6}\selectfont]
-    at ($(resTapA -| leftRailAnchor)!0.5!(hcPostA.west -| leftRailAnchor)$)
-    {residual $X_l$\\(4-stream)};
-
-\node[shapeLabel, text=lavSubtext, fill=bgWarm, anchor=center,
-      font=\sffamily\fontsize{6.5}{7.6}\selectfont]
-    at ($(resTapF -| leftRailAnchor)!0.5!(hcPostF.west -| leftRailAnchor)$)
-    {residual $X_l$\\(4-stream)};
-
-% "+" indicator inside hcPost cards' east side: signals that two paths sum here
-\node[font=\sffamily\bfseries\fontsize{9}{10}\selectfont, text=lavSubtext,
-      anchor=east, inner sep=1pt] at ($(hcPostA.east)+(-0.10,0)$) {$+$};
-\node[font=\sffamily\bfseries\fontsize{9}{10}\selectfont, text=lavSubtext,
-      anchor=east, inner sep=1pt] at ($(hcPostF.east)+(-0.10,0)$) {$+$};
-
-% Group the whole transformer block.
-% leftRailAnchor is fitted so the blockGroup boundary widens on the left to wrap the rail.
+% Group the whole transformer block
 \begin{scope}[on background layer]
-  \node[archGroup,
-        fit=(blockTopAnchor)(hcPreA)(rmsA)(attnGroup)(hcPostA)(hcPreF)(rmsF)(moeGroup)(hcPostF)(leftRailAnchor),
+  \node[archGroup, fit=(hcPreA)(rmsA)(attnGroup)(hcPostA)(hcPreF)(rmsF)(moeGroup)(hcPostF),
         label={[archGroupTitle, anchor=south west]north west:{Transformer Block $\times$ 43 layers}}]
        (blockGroup) {};
 \end{scope}
@@ -436,135 +319,11 @@
 % Connect from \stacktop into block, and out
 \draw[archEdge] (hcexpand.south) -- (hcPreA.north);
 
-
-% --- HC pre/post formula labels (one annotation, the four are identical) ---
-\node[formulaLabel] at ($(hcPreA.east)+(0.4,0)$)
-    {(2+hm)$\cdot$hm$\cdot$d = 98.30K\\
-     paper: $X_{l+1}=B_lX_l+C_lF_l(A_lX_l)$\\
-     $B_l=\symup{SK}_{20}(\exp \tilde B_l)$};
-
-% --- continue main flow: HC head (collapse 4 streams) -> final norm -> lm head ---
-% All four cards explicitly anchored on the main axis (rmsA.x = 0) instead of
-% blockGroup.center.x — blockGroup is asymmetric because it fits leftRailAnchor
-% (the residual skip rail) on the left, so its center is shifted off-axis.
-\node[archCard, anchor=north, draw=lavStroke, fill=lavFill]
-    at ($(rmsA |- blockGroup.south) + (0, -1.0)$) (hcHead)
-    { \anthropicLabel{lavText}{lavSubtext}{HC head}{collapse hc\_mult=4 $\to$ 1 stream} };
-\draw[archEdge] (hcPostF.south) -- (hcHead.north);
-\node[shapeLabel] at ($(hcPostF.south)!0.5!(hcHead.north)$) {\shapeDims{B,T,4,4096}};
-\node[formulaLabel] at ($(hcHead.east)+(0.6,0)$) {hm$^2\cdot$d = 65.54K};
-
-\node[archCard, anchor=north, draw=mintStroke, fill=mintFill]
-    at ($(rmsA |- hcHead.south) + (0, -0.7)$) (finalNorm)
-    { \anthropicLabel{mintText}{mintSubtext}{Final RMSNorm}{} };
-\draw[archEdge] (hcHead) -- (finalNorm);
-\node[shapeLabel] at ($(hcHead.south)!0.5!(finalNorm.north)$) {\shapeDims{B,T,4096}};
-\node[formulaLabel] at ($(finalNorm.east)+(0.6,0)$) {d = 4.10K};
-
-\node[archCard, anchor=north, draw=peachStroke, fill=peachFill]
-    at ($(rmsA |- finalNorm.south) + (0, -1.0)$) (lmhead)
-    { \anthropicLabel{peachText}{peachSubtext}{LM Head}{vocab projection (nn.Linear)} };
-\draw[archEdge] (finalNorm) -- (lmhead);
-\node[formulaLabel] at ($(lmhead.east)+(0.45,0)$)
-    {v$\cdot$d = 529.53M};
-
-\node[archCard, anchor=north, draw=peachStroke, fill=peachFill]
-    at ($(rmsA |- lmhead.south) + (0, -0.8)$) (logits)
-    { \anthropicLabel{peachText}{peachSubtext}{logits}{} };
-\draw[archEdge] (lmhead) -- (logits);
-\node[shapeLabel] at ($(lmhead.south)!0.5!(logits.north)$) {\shapeDims{B,T,129280}};
-
-
-% Explicit branching dot on the main flow at finalNorm output
-\node[circle, draw=connectorStroke, fill=bgPanel, line width=0.7pt,
-      inner sep=1.2pt] (mtpTap) at ($(finalNorm.south)!0.5!(lmhead.north)$) {};
-\node[font=\sffamily\itshape\fontsize{6.5}{8}\selectfont, text=mutedText, anchor=west]
-    at ($(mtpTap)+(0.2,0.18)$) {tap to MTP};
-\node[archCard, right=3.5cm of lmhead, draw=lavStroke, fill=lavFill] (mtp)
-    { \anthropicLabel{lavText}{lavSubtext}{MTPBlock $\times$ 1}{e/h proj + full Block(cr=0) + HC head} };
-\draw[archEdge, dashed] (mtpTap) -| (mtp.north);
-\node[archCard, below=0.8cm of mtp, draw=peachStroke, fill=peachFill] (mtpLogits)
-    { \anthropicLabel{peachText}{peachSubtext}{MTP logits}{next-1 prediction} };
-\draw[archEdge] (mtp) -- (mtpLogits);
-\node[formulaLabelR] at ($(mtp.south west)+(-0.25,-0.33)$)
-    {2$\cdot$d$^2$ + 2$\cdot$d\\$+$ full Block + HC head\\= 6.61B};
-
-% =====================================================================
-% Right column: stacked hint / summary cards, all anchored at the same x
-% (mtpLogits.east + 1.1cm), uniform width 8.2cm. Order top→bottom:
-%   (1) Model card  (cream)
-%   (2) Symbol legend (lavender hint)
-%   (3) Per-layer attention pattern (compress-ratios strip)
-%   (4) HC post — shape walk-through
-% =====================================================================
-
-% (1) Model card — top of the right column. Aligned y with input.north.
-% Offset (2.5cm) keeps the column clear of the long formula labels on
-% blockGroup.east (e.g. "Indexer: ...", "split H heads into g groups, ...").
-\node[summaryBox, anchor=north west, text width=8.2cm]
-    at ($(mtpLogits.east |- input.north) + (2.5, 0)$) (modelCard) {%
-\begin{tabular}{@{}ll@{}}
-\textbf{Model}      & deepseek-ai/DeepSeek-V4-Flash \\
-Family              & dsv4 (deepseek\_v4) \\
-Total params        & \textbf{284.44B} (main stack) \\
-Active per token    & \textbf{13.90B} \\
-MTP head            & 6.61B \\
-Total + MTP         & 291.05B \\
-Quantization        & FP8 e4m3, experts=fp4, BF16 gates/norms \\
-Layers (L)          & 43 \\
-Hidden (d)          & 4096 \\
-Heads (H/Hkv)       & 64 / 1 \\
-Head dim (dh)       & 512 \\
-Q LoRA rank         & 1024 \\
-O LoRA / groups     & 1024 / 8 \\
-Routed experts      & 256 (top-6) \\
-Shared experts      & 1 \\
-MoE FFN dim (f)     & 2048 \\
-HC mult (hm)        & 4 \\
-Index top-K         & 512 \\
-Sliding window      & 128 \\
-Features            & hash\_routing $\cdot$ moe $\cdot$ mtp \\
-                    & shared\_experts $\cdot$ sliding\_window $\cdot$ swiglu\_limit \\
-\end{tabular}%
-};
-
-% (2) Symbol legend — abbreviations used in attention nodes / formulas.
-\node[hintBox, anchor=north west, text width=8.2cm]
-    at ($(modelCard.south west) + (0, -0.4)$) (symLegend) {%
-{\sffamily\bfseries\fontsize{8}{9.5}\selectfont\color{lavSubtext}Symbol legend (attention)}\\[2pt]
-\begin{tabular}{@{}lll@{}}
-\texttt{d}    & hidden\_size            & 4096 \\
-\texttt{qr}   & q\_lora\_rank           & 1024 \\
-\texttt{H}    & num\_attention\_heads   & 64 \\
-\texttt{dh}   & head\_dim               & 512 \\
-\texttt{Hkv}  & num\_key\_value\_heads  & 1 (shared-KV MQA) \\
-\texttt{og}   & o\_groups               & 8 \\
-\texttt{or}   & o\_lora\_rank           & 1024 \\
-\texttt{cr}   & compress\_ratio         & 0 / 4 / 128 (per-layer) \\
-\texttt{Ih}   & index\_n\_heads         & 64 \\
-\texttt{Id}   & index\_head\_dim        & 128 \\
-\texttt{win}  & sliding\_window         & 128 \\
-\texttt{topk} & index\_topk             & 512 (CSA only) \\[2pt]
-\multicolumn{3}{@{}l@{}}{\textit{layer types via \texttt{compress\_ratios[i]}}:}\\
-\texttt{0}    & SWA  & sliding window only \\
-\texttt{4}    & CSA  & + Compressor + Indexer top-512 \\
-\texttt{128}  & HCA  & + Compressor (no Indexer) \\
-\end{tabular}%
-};
-
-% (3) Per-layer attention pattern (compress-ratios strip) — below symLegend.
-% All cells and the legend are positioned relative to cropattern_lab so the
-% whole widget moves with this anchor.
-% NOTES on alignment with the other right-column boxes (modelCard / symLegend /
-% hcPostShapes, all 8.2cm wide with hintBox inner sep=6pt):
-%   * `inner sep=0pt` makes cropattern_lab.bbox width exactly equal to its
-%     text width (8.2cm). Without this, default inner sep (~0.085cm) would
-%     push croBox's right edge ~0.17cm past symLegend.east.
-%   * The +0.21cm horizontal shift cancels croBox's own 6pt inner_sep so the
-%     visible left frame aligns with the other three cards.
+% --- Compress-ratios pattern strip ---
+% Compress-ratios pattern widget: framed strip with title + cells + legend
 \node[anchor=north west, font=\sffamily\bfseries\fontsize{7.2}{8.3}\selectfont, text=inkText,
-      text width=8.2cm, align=left, inner sep=0pt]
-    at ($(symLegend.south west) + (0.21, -0.5)$) (cropattern_lab)
+      text width=8.2cm, align=left]
+    at ($(blockGroup.south east)+(0.55,-0.55)$) (cropattern_lab)
     {Per-layer attention pattern (43 main layers + MTP cr=0):};
 \node[draw=laneStroke, line width=0.3pt, minimum width=0.18cm, minimum height=0.60cm, inner sep=0pt,
     fill=bgPanel]
@@ -742,112 +501,118 @@ Features            & hash\_routing $\cdot$ moe $\cdot$ mtp \\
     fill=bgPanel]
     at ($(cropattern_lab.south west)+(7.920,-0.35)$) (crocellMtp)
     {};
-% Legend rows — one per layer-type, each tagged with a color cell that matches
-% the corresponding fill in the strip above (bgPanel = SWA / MTP, amberFill = CSA,
-% peachFill = HCA). Stacked vertically below crocell0.
-\node[draw=laneStroke, line width=0.3pt, minimum width=0.22cm, minimum height=0.22cm,
-      inner sep=0pt, fill=bgPanel, anchor=north west]
-    at ($(crocell0.south west)+(0,-0.20)$) (legendCellSWA) {};
-\node[anchor=west, font=\sffamily\fontsize{6.9}{8}\selectfont, text=mutedText,
-      inner sep=3pt] at (legendCellSWA.east) (legendTextSWA)
-    {0 \;= SWA only (w=128)};
-
-\node[draw=laneStroke, line width=0.3pt, minimum width=0.22cm, minimum height=0.22cm,
-      inner sep=0pt, fill=amberFill, anchor=north west]
-    at ($(legendCellSWA.south west)+(0,-0.06)$) (legendCellCSA) {};
-\node[anchor=west, font=\sffamily\fontsize{6.9}{8}\selectfont, text=mutedText,
-      inner sep=3pt] at (legendCellCSA.east) (legendTextCSA)
-    {4 \;= CSA ($\times$4 compress + Indexer top-512)};
-
-\node[draw=laneStroke, line width=0.3pt, minimum width=0.22cm, minimum height=0.22cm,
-      inner sep=0pt, fill=peachFill, anchor=north west]
-    at ($(legendCellCSA.south west)+(0,-0.06)$) (legendCellHCA) {};
-\node[anchor=west, font=\sffamily\fontsize{6.9}{8}\selectfont, text=mutedText,
-      inner sep=3pt] at (legendCellHCA.east) (legendTextHCA)
-    {128 \;= HCA ($\times$128 compress, no Indexer)};
-
-\node[draw=laneStroke, line width=0.3pt, minimum width=0.22cm, minimum height=0.22cm,
-      inner sep=0pt, fill=bgPanel, anchor=north west]
-    at ($(legendCellHCA.south west)+(0,-0.06)$) (legendCellMTP) {};
-\node[anchor=west, font=\sffamily\fontsize{6.9}{8}\selectfont, text=mutedText,
-      inner sep=3pt] at (legendCellMTP.east) (legendTextMTP)
-    {trailing 0 \;= MTP};
-
+\node[anchor=north west, font=\sffamily\fontsize{6.9}{8}\selectfont, text=mutedText,
+      text width=8.2cm, align=left]
+    at ($(crocell0.south west)+(0,-0.16)$) (crolegend)
+    {0 = full\quad|\quad 4 = overlap + Indexer\quad|\quad 128 = block\quad|\quad final 0 = MTP};
 % Frame the whole widget so it doesn't read as stray caption
 \begin{scope}[on background layer]
   \node[archGroup, draw=creamStroke, dashed=false, line width=0.4pt,
         inner sep=6pt,
-        fit=(cropattern_lab) (crocell0) (crocell42) (crocellMtp)
-            (legendCellSWA) (legendCellMTP)
-            (legendTextSWA) (legendTextCSA) (legendTextHCA) (legendTextMTP)]
+        fit=(cropattern_lab) (crocell0) (crocell42) (crocellMtp) (crolegend)]
        (croBox) {};
 \end{scope}
 
-% --- HC post: shape walk-through — bottom of the right column, below croBox.
-% Variable letters use \symup{} for upright display (matching the diagram-wide
-% \shapeDims convention) so they read as code-like identifiers rather than
-% serif/italic math.
-\node[hintBox, anchor=north west, text width=8.2cm,
-      font=\sffamily\fontsize{7.5}{9.0}\selectfont]
-    at ($(croBox.south west) + (0, -0.4)$) (hcPostShapes) {%
-{\sffamily\bfseries\fontsize{8}{9.5}\selectfont\color{lavSubtext}HC post --- shape walk-through (mHC eq. 1)}\\[2pt]
-\texttt{new\_hs}\\
-\texttt{\ \ = post.unsqueeze(-1) * attn\_output.unsqueeze(-2)}\\
-\texttt{\ \ + comb @ hidden\_states}\\[3pt]
-\begin{tabular}{@{}lll@{}}
-\multicolumn{3}{@{}l@{}}{\textit{inputs} (4-stream residual $\symup{X}_{\symup{l}}$):}\\
-\texttt{hidden\_states}       & \texttt{[B,T,4,4096]} & $\symup{X}_{\symup{l}}$\\
-\texttt{post}                 & \texttt{[B,T,4]}      & $\symup{C}_{\symup{l}}$\\
-\texttt{comb}                 & \texttt{[B,T,4,4]}    & $\symup{B}_{\symup{l}}$ (Sinkhorn)\\
-\texttt{attn\_output}         & \texttt{[B,T,4096]}   & $\symup{F}_{\symup{l}}(\symup{A}_{\symup{l}}\,\symup{X}_{\symup{l}})$\\[3pt]
-\multicolumn{3}{@{}l@{}}{\textit{left} = $\symup{C}_{\symup{l}}\,\symup{F}_{\symup{l}}(\symup{A}_{\symup{l}}\,\symup{X}_{\symup{l}})$ (sublayer scatter):}\\
-\texttt{\ post.unsqueeze(-1)} & \texttt{[B,T,4,1]}    & \\
-\texttt{\ attn.unsqueeze(-2)} & \texttt{[B,T,1,4096]} & \\
-\texttt{\ (broadcast *)}      & \texttt{[B,T,4,4096]} & outer product\\[3pt]
-\multicolumn{3}{@{}l@{}}{\textit{right} = $\symup{B}_{\symup{l}}\,\symup{X}_{\symup{l}}$ ($4 \times 4$ stream mix):}\\
-\texttt{\ comb @ hs}          & \texttt{[B,T,4,4096]} & \\[3pt]
-\multicolumn{3}{@{}l@{}}{\textit{sum:} $\symup{X}_{\symup{l+1}}$ = \texttt{left + right}}\\
-                              & \texttt{[B,T,4,4096]} & \\
-\end{tabular}%
-};
+% --- HC pre/post formula labels (one annotation, the four are identical) ---
+\node[formulaLabel] at ($(hcPreA.east)+(0.4,0)$)
+    {(2+hm)$\cdot$hm$\cdot$d = 98.30K\\
+     paper: $X_{l+1}=B_lX_l+C_lF_l(A_lX_l)$\\
+     $B_l=\symup{SK}_{20}(\exp \tilde B_l)$};
 
-\node[formulaLabel] at ($(wkv.east -| blockGroup.east)+(0.6,0)$)
+% --- continue main flow: final norm, lm head ---
+\node[archCard, below=2.0cm of blockGroup, draw=mintStroke, fill=mintFill] (finalNorm)
+    { \anthropicLabel{mintText}{mintSubtext}{Final RMSNorm}{} };
+\draw[archEdge] (hcPostF.south) -- (finalNorm.north);
+\node[shapeLabel] at ($(hcPostF.south)!0.52!(finalNorm.north)$) {\shapeDims{B,T,4,4096}};
+\node[formulaLabel] at ($(finalNorm.east)+(0.6,0)$) {d = 4.10K};
+
+\node[archCard, below=1.0cm of finalNorm, draw=peachStroke, fill=peachFill] (lmhead)
+    { \anthropicLabel{peachText}{peachSubtext}{HC LM Head}{HC-aware projection $\to$ vocab} };
+\draw[archEdge] (finalNorm) -- (lmhead);
+\node[formulaLabel] at ($(lmhead.east)+(0.45,0)$)
+    {v$\cdot$d\\$+$ (2+hm)$\cdot$hm$\cdot$d\\= 529.63M};
+
+\node[archCard, below=0.8cm of lmhead, draw=peachStroke, fill=peachFill] (logits)
+    { \anthropicLabel{peachText}{peachSubtext}{logits}{} };
+\draw[archEdge] (lmhead) -- (logits);
+\node[shapeLabel] at ($(lmhead.south)!0.5!(logits.north)$) {\shapeDims{B,T,129280}};
+
+
+% Explicit branching dot on the main flow at finalNorm output
+\node[circle, draw=connectorStroke, fill=bgPanel, line width=0.7pt,
+      inner sep=1.2pt] (mtpTap) at ($(finalNorm.south)!0.5!(lmhead.north)$) {};
+\node[font=\sffamily\itshape\fontsize{6.5}{8}\selectfont, text=mutedText, anchor=west]
+    at ($(mtpTap)+(0.2,0.18)$) {tap to MTP};
+\node[archCard, right=3.5cm of lmhead, draw=lavStroke, fill=lavFill] (mtp)
+    { \anthropicLabel{lavText}{lavSubtext}{MTPBlock $\times$ 1}{e/h proj + full Block(cr=0) + HC head} };
+\draw[archEdge, dashed] (mtpTap) -| (mtp.north);
+\node[archCard, below=0.8cm of mtp, draw=peachStroke, fill=peachFill] (mtpLogits)
+    { \anthropicLabel{peachText}{peachSubtext}{MTP logits}{next-1 prediction} };
+\draw[archEdge] (mtp) -- (mtpLogits);
+\node[formulaLabelR] at ($(mtp.south west)+(-0.25,-0.33)$)
+    {2$\cdot$d$^2$ + 2$\cdot$d\\$+$ full Block + HC head\\= 6.61B};
+
+
+\node[formulaLabel] at ($(wkv.east -| attnGroup.east)+(0.4,0)$)
     {Q-LoRA: d$\cdot$qr + qr$\cdot$H$\cdot$dh = 37.75M\\
      $c^Q_t=h_tW_{DQ}$;\quad $q_t=c^Q_tW_{UQ}$};
-\node[formulaLabel] at ($(kvnorm.east -| blockGroup.east)+(0.6,0)$)
+\node[formulaLabel] at ($(kvnorm.east -| attnGroup.east)+(0.4,0)$)
     {KV: d$\cdot$dh = 2.10M};
-\node[formulaLabel] at ($(compr.east -| blockGroup.east)+(0.6,0)$)
+\node[formulaLabel] at ($(compr.east -| attnGroup.east)+(0.4,0)$)
     {Compressor (cr=4): 8.40M\\
      Compressor (cr=128): 4.26M\\
      $C_i^{\symup{comp}}=\sum_j S_j\odot C_j$};
-\node[formulaLabel] at ($(idx.east -| blockGroup.east)+(0.6,0)$)
+\node[formulaLabel] at ($(idx.east -| attnGroup.east)+(0.4,0)$)
     {Indexer (cr=4): qr$\cdot$Ih$\cdot$Id + d$\cdot$Ih + Compressor\\
      $I_{t,s}=\sum_h w^I_{t,h}\symup{ReLU}(q^I_{t,h}K^I_s)$\\
      $C_t^{\symup{sel}}=\symup{TopK}_{512}(I_{t,:})$};
-\node[formulaLabel] at ($(sparse.east -| blockGroup.east)+(0.6,0)$)
-    {sparse\_attn (no params):\\
-     SWA: $K=V=W_t$\\
-     CSA: $K=V=C_t^{\symup{sel}}\cup W_t$ (top-512)\\
-     HCA: $K=V=C_t\cup W_t$ (all compressed)};
-\node[formulaLabel] at ($(wob.east -| blockGroup.east)+(0.6,0)$)
+\node[formulaLabel] at ($(sparse.east -| attnGroup.east)+(0.4,0)$)
+    {sparse\_attn: top-512 indices (no params)\\
+     $o_{t,i}=\symup{CoreAttn}(q_{t,i},K=C_t^{\symup{sel}}\cup W_t,$\\
+     \hspace{1.0em}$V=C_t^{\symup{sel}}\cup W_t)$};
+\node[formulaLabel] at ($(wob.east -| attnGroup.east)+(0.4,0)$)
     {O-LoRA: H$\cdot$dh$\cdot$or + og$\cdot$or$\cdot$d = 67.11M\\
      split $H$ heads into $g$ groups, then project $g\cdot d_g\to d$};
 
 
-\node[formulaLabel] at ($(router.east -| blockGroup.east)+(0.6,0)$)
+\node[formulaLabel] at ($(routerHash.east -| moeGroup.east)+(0.6,0)$)
     {Score Router: d$\cdot$E = 1.05M\\
      $a_e=\sqrt{\symup{softplus}(hW_e)}$, top-6\\
      Hash Router: v$\cdot$K = 775.68K\\
      $e=\symup{tid2eid}[\symup{token}]$};
-\node[formulaLabel] at ($(eshared.east -| blockGroup.east)+(0.6,0.10)$)
+\node[formulaLabel] at ($(eshared.east -| moeGroup.east)+(0.6,0.10)$)
     {per expert: 3$\cdot$d$\cdot$f = 25.17M};
-\node[formulaLabel] at ($(moeSum.east -| blockGroup.east)+(0.6,0.10)$)
+\node[formulaLabel] at ($(moeSum.east -| moeGroup.east)+(0.6,0.10)$)
     {experts total: (256+1)$\cdot$3$\cdot$d$\cdot$f = 6.47B};
-\node[formulaLabel] at ($(moeSum.east -| blockGroup.east)+(0.6,-0.20)$)
+\node[formulaLabel] at ($(moeSum.east -| moeGroup.east)+(0.6,-0.20)$)
     {active: (6+1)$\cdot$3$\cdot$d$\cdot$f = 176.16M};
 
 
 
+
+\node[summaryBox, anchor=west] at ([xshift=1.1cm]mtpLogits.east) {
+\begin{tabular}{@{}ll@{}}
+\textbf{Model} & deepseek-ai/DeepSeek-V4-Flash \\
+Family & dsv4 (deepseek\_v4) \\
+Total params & \textbf{284.44B} (main stack) \\
+Active per token & \textbf{13.90B} \\
+MTP head & 6.61B \\
+Total + MTP & 291.05B \\
+Quantization & FP8, e4m3, experts=fp4, BF16 gates/norms \\
+Layers (L) & 43 \\
+Hidden (d) & 4096 \\
+Heads (H/Hkv) & 64 / 1 \\
+Head dim (dh) & 512 \\
+Q LoRA rank & 1024 \\
+O LoRA / groups & 1024 / 8 \\
+Routed experts & 256 (top-6) \\
+Shared experts & 1 \\
+MoE FFN dim (f) & 2048 \\
+HC mult (hm) & 4 \\
+Index top-K & 512 \\
+Sliding window & 128 \\
+\end{tabular}
+};
 
 \end{tikzpicture}
 \end{document}
