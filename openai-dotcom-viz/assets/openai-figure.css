@@ -1,0 +1,59 @@
+/* ============================================================================
+ * OpenAI "dotcom" figure styles — flow / process diagrams + shared design tokens.
+ *
+ * Wrap a diagram in <div class="oai-figure"> and compose from the primitives
+ * below (.box, .subbox, .pill, .conn, …). Connectors need the shared arrow
+ * <marker> — see references/flow-diagram.md for the defs snippet and the
+ * rounded-corner path recipe. Bar charts use assets/openai-chart.js instead;
+ * this file is for the hand-arranged diagrams.
+ * ==========================================================================*/
+
+/* --- OpenAI Sans, served CORS-open from OpenAI's public CDN (the real font) --- */
+@font-face{font-family:"OpenAI Sans";font-weight:400;font-style:normal;font-display:swap;
+  src:url("https://cdn.openai.com/common/fonts/openai-sans/OpenAISans-Regular.woff2") format("woff2");}
+@font-face{font-family:"OpenAI Sans";font-weight:500;font-style:normal;font-display:swap;
+  src:url("https://cdn.openai.com/common/fonts/openai-sans/OpenAISans-Medium.woff2") format("woff2");}
+@font-face{font-family:"OpenAI Sans";font-weight:600;font-style:normal;font-display:swap;
+  src:url("https://cdn.openai.com/common/fonts/openai-sans/OpenAISans-Semibold.woff2") format("woff2");}
+@font-face{font-family:"OpenAI Sans";font-weight:700;font-style:normal;font-display:swap;
+  src:url("https://cdn.openai.com/common/fonts/openai-sans/OpenAISans-Bold.woff2") format("woff2");}
+
+:root{
+  --ink:#0d0d0d;            /* text + keylines (near-black) */
+  --line:#0d0d0d;           /* box borders + connectors */
+  --muted:#6e6e6e;
+  --accent:#fcdad6;         /* pink-1: highlight fill (e.g. "flagged") */
+  --accent-line:#8a3a6f;    /* pink-5: keyline / dot texture */
+  --grid:#e6e6e6;           /* hairline card border */
+  --sans:"OpenAI Sans","Helvetica Neue",Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,"Roboto Mono",Consolas,monospace;
+}
+
+.oai-figure{font-family:var(--sans);color:var(--ink);}
+.oai-figure .flow-title{font-weight:700;font-size:17px;margin:0 0 22px;}
+
+/* --- Boxes: outer stage box + inner step box --- */
+.oai-figure .box{border:1.5px solid var(--line);border-radius:10px;background:#fff;padding:16px;}
+.oai-figure .box-title{font-weight:700;font-size:14px;margin:0 0 14px;}
+.oai-figure .subbox{border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;
+  font-size:13.5px;line-height:1.35;}
+
+/* --- Pills: monospace uppercase labels (inputs / outputs / states) --- */
+.oai-figure .pill{border:1.5px solid var(--line);border-radius:7px;background:#fff;
+  font-family:var(--mono);font-size:12px;letter-spacing:.02em;text-transform:uppercase;
+  padding:9px 12px;text-align:center;white-space:pre-line;line-height:1.25;}
+.oai-figure .pill.accent{background:var(--accent);}                 /* solid pink highlight */
+.oai-figure .pill.dotted{                                            /* stippled pink variant */
+  background:radial-gradient(var(--accent-line) .6px,transparent .7px) 0 0/6px 6px,var(--accent);}
+
+/* --- Layout helpers --- */
+.oai-figure .flow{display:flex;align-items:center;min-height:360px;}
+.oai-figure .col{display:flex;flex-direction:column;justify-content:center;}
+.oai-figure .rows{display:flex;flex-direction:column;gap:12px;}
+.oai-figure .stack{display:flex;flex-direction:column;gap:12px;justify-content:center;}
+.oai-figure .inline{display:flex;align-items:center;gap:12px;}
+.oai-figure .scroller{overflow-x:auto;}
+
+/* --- Connector columns: an absolutely-positioned SVG overlay draws the lines --- */
+.oai-figure .conn{position:relative;align-self:stretch;}
+.oai-figure .conn svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}

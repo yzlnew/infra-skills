@@ -137,6 +137,16 @@ Generate Sebastian-Raschka-gallery-style TikZ architecture diagrams for any Hugg
 
 **Status:** ✅ Complete
 
+### OpenAI Dotcom Viz
+Build figures in OpenAI's blog / research / system-card "dotcom" visual style, emitted as self-contained HTML/SVG with zero dependencies.
+
+**Capabilities:**
+- Monochrome bar charts (darker same-hue stroke, rounded corners, black y-axis with outward ticks, no gridlines, circle legend markers, value labels above bars, angled category labels)
+- Flow / process diagrams (rounded boxes, monospace uppercase pills, pink highlights, thin open-chevron connectors, dashed negative branches)
+- Real OpenAI Sans typography with zero external dependencies
+
+**Status:** ✅ Complete
+
 ## Planned Skills
 
 ### SGLang Developer

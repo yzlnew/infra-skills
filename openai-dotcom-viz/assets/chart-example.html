@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenAI dotcom bar chart — example</title>
+<style>body{margin:0;padding:40px;background:#fff}</style>
+</head>
+<body>
+<svg id="chart"></svg>
+<script src="openai-chart.js"></script>
+<script>
+renderOpenAIBarChart("#chart", {
+  title: "Share of Dataset Flagged by Issue Type",
+  yAxisTitle: "Percent of total dataset",
+  valueFormat: "percent",
+  yMax: 0.20, yTickStep: 0.05,
+  categories: [
+    "Overly strict\ntests", "Low-coverage\ntests", "Misleading\nprompt",
+    "Miscellaneous\nissues", "Underspecified\nprompt"
+  ],
+  series: [
+    { name: "Human supervised agent review", values: [0.144, 0.041, 0.063, 0.019, 0.006] },
+    { name: "Human annotations",             values: [0.178, 0.094, 0.075, 0.012, 0.008] }
+  ]
+});
+</script>
+</body>
+</html>

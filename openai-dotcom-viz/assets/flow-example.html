@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenAI dotcom flow diagram — example</title>
+<link rel="stylesheet" href="openai-figure.css">
+<style>
+  body{margin:0;padding:40px;background:#fff}
+  .card{border:1px solid var(--grid);border-radius:14px;padding:28px 24px;max-width:1120px}
+</style>
+</head>
+<body>
+<div class="oai-figure">
+  <div class="card scroller">
+    <p class="flow-title">Quality assurance pipeline</p>
+
+    <!-- shared open-chevron arrowhead, reused by every connector -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <marker id="oai-arrow" markerUnits="userSpaceOnUse" markerWidth="13" markerHeight="13"
+              refX="9.5" refY="6" orient="auto-start-reverse">
+        <path d="M3 2 L9 6 L3 10" fill="none" stroke="var(--line)" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs></svg>
+
+    <div class="flow" style="min-width:1000px">
+
+      <!-- Stage 1 -->
+      <div class="col" style="flex:0 0 284px">
+        <div class="box">
+          <p class="box-title">1: Initial Data Quality Pipeline</p>
+          <div class="inline">
+            <div class="rows" style="flex:1">
+              <div class="pill">Model rollouts</div>
+              <div class="pill">Patches / diffs</div>
+              <div class="pill">Task metadata</div>
+            </div>
+            <svg width="28" height="120" style="flex:0 0 28px;overflow:visible">
+              <g stroke="var(--line)" stroke-width="1.5" fill="none">
+                <line x1="0" y1="22" x2="20" y2="22" marker-end="url(#oai-arrow)"/>
+                <line x1="0" y1="60" x2="20" y2="60" marker-end="url(#oai-arrow)"/>
+                <line x1="0" y1="98" x2="20" y2="98" marker-end="url(#oai-arrow)"/>
+              </g>
+            </svg>
+            <div class="pill" style="flex:0 0 92px;display:flex;align-items:center;justify-content:center;min-height:110px">Automated screening</div>
+            <svg width="28" height="120" style="flex:0 0 28px;overflow:visible">
+              <g stroke="var(--line)" stroke-width="1.5" fill="none">
+                <line x1="0" y1="34" x2="20" y2="34" marker-end="url(#oai-arrow)"/>
+                <line x1="0" y1="86" x2="20" y2="86" stroke-dasharray="3 3" marker-end="url(#oai-arrow)"/>
+              </g>
+            </svg>
+            <div class="stack" style="flex:0 0 96px">
+              <div class="pill accent">Flagged for review</div>
+              <div class="pill">Not flagged</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- branch connector: rounded corners, splits to two stages -->
+      <div class="conn" style="flex:0 0 64px">
+        <svg viewBox="0 0 64 360" preserveAspectRatio="xMidYMid meet" height="360">
+          <g stroke="var(--line)" stroke-width="1.5" fill="none" stroke-linecap="round">
+            <path d="M2 180 H30"/>
+            <path d="M30 180 V106 Q30 96 40 96 H56" marker-end="url(#oai-arrow)"/>
+            <path d="M30 180 V254 Q30 264 40 264 H56" marker-end="url(#oai-arrow)"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Stage 2 + 3 stacked -->
+      <div class="col" style="flex:0 0 300px;gap:20px">
+        <div class="box">
+          <p class="box-title">2: Human-Supervised Agent Review</p>
+          <div class="inline">
+            <div class="subbox" style="flex:1">Runs more exhaustive agent-based checks on flagged tasks</div>
+            <svg width="26" height="20" style="overflow:visible"><line x1="0" y1="10" x2="18" y2="10" stroke="var(--line)" stroke-width="1.5" marker-end="url(#oai-arrow)"/></svg>
+            <div class="subbox" style="flex:1">A researcher reviews outputs and makes final judgement</div>
+          </div>
+        </div>
+        <div class="box">
+          <p class="box-title">3: Human Reviewer Campaign</p>
+          <div class="inline">
+            <div class="subbox" style="flex:1">Experienced software engineers review flagged tasks</div>
+            <svg width="26" height="20" style="overflow:visible"><line x1="0" y1="10" x2="18" y2="10" stroke="var(--line)" stroke-width="1.5" marker-end="url(#oai-arrow)"/></svg>
+            <div class="subbox" style="flex:1">5 independent reviewers per task</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- connectors to outputs -->
+      <div class="conn" style="flex:0 0 46px">
+        <svg viewBox="0 0 46 360" preserveAspectRatio="xMidYMid meet" height="360">
+          <g stroke="var(--line)" stroke-width="1.5" fill="none" stroke-linecap="round">
+            <line x1="2" y1="96" x2="38" y2="96" marker-end="url(#oai-arrow)"/>
+            <line x1="2" y1="264" x2="38" y2="264" marker-end="url(#oai-arrow)"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Output boxes -->
+      <div class="col" style="flex:0 0 236px;gap:26px">
+        <div class="box">
+          <p class="box-title" style="font-size:13px;line-height:1.3">Per-task human-supervised agent review results</p>
+          <div class="rows">
+            <div class="pill accent">Broken / not broken</div>
+            <div class="pill accent">Category (1 of 5)</div>
+          </div>
+        </div>
+        <div class="box">
+          <p class="box-title" style="font-size:13px;line-height:1.3">Per-task human review results</p>
+          <div class="rows">
+            <div class="pill dotted">Broken / not broken</div>
+            <div class="pill dotted">Category (1 of 5)</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
